@@ -112,7 +112,7 @@ class InternalMyParseNode(MyParseNode):
             side = L if current.left > sibling.left else R
             if not keep_valence_value:
                 return side+ANY
-             return side+sibling.bracket_label()
+            return side+sibling.bracket_label()
 
         # Recursion
         flag = CR
