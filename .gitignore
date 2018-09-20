@@ -1,1 +1,8 @@
-__pycache__
+# Python byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# EVALB output files
+EVALB/evalb
+EVALB/evalb.dSYM/
