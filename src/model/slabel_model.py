@@ -210,7 +210,6 @@ class SlabelModel(BasicModel):
             self.labels_len: batch.labels.length,
             self.targets: batch.targets,
             self.is_train : is_train}
-        import pdb; pdb.set_trace()
         return self.sess.run(output_feed, input_feed)
 
     """"Decode Part """
