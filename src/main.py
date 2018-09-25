@@ -1,14 +1,32 @@
-from subprocess import Popen, DEVNULL, PIPE
 import argparse
+import itertools
+import numpy as np
+from subprocess import Popen, DEVNULL, PIPE
+import time
 
 import evaluate
+import parse
 import trees
+import vocabulary
+
+from model.slabel_model import SlabelModel
+
+def format_elapsed(start_time):
+    elapsed_time = int(time.time() - start_time)
+    minutes, seconds = divmod(elapsed_time, 60)
+    hours, minutes = divmod(minutes, 60)
+    days, hours = divmod(hours, 24)
+    elapsed_string = "{}h{:02}m{:02}s".format(hours, minutes, seconds)
+    if days > 0:
+        elapsed_string = "{}d{}".format(days, elapsed_string)
+    return elapsed_string
 
 def get_dependancies(fin, penn_path):
     """ Creates dependancy dictionary for each intput file"""
 
     command = 'java -jar {} < {} -splitSlash=false'.format(penn_path, fin)
-    proc = Popen(command, shell=True, stdout=PIPE, stderr=DEVNULL)
+    # proc = Popen(command, shell=True, stdout=PIPE, stderr=DEVNULL)
+    proc = Popen(command, shell=True, stdout=PIPE)
     results = proc.stdout.readlines()
     dependancies = []
     dependancy = []
@@ -21,6 +39,12 @@ def get_dependancies(fin, penn_path):
             dependancy.append(int(res.split()[6]))
     return dependancies
 
+def loopback(parse, astar_parms, keep_valence_value):
+    beams = [[(trees.LeafMyParseNode(i, l.tag, l.word).deserialize(l.labels),  1.)]
+                    for i, l in enumerate(parse.leaves())]
+    return astar_search(beams, keep_valence_value, astar_parms, 0)
+
+
 def run_train(args):
     if args.numpy_seed is not None:
         print("Setting numpy random seed to {}...".format(args.numpy_seed))
@@ -30,23 +54,176 @@ def run_train(args):
     train_treebank = trees.load_trees(args.train_path)
     print("Loaded {:,} training examples.".format(len(train_treebank)))
 
-    print("Processing trees for training...")
+    print("Loading developing trees from {}...".format(args.dev_path))
+    dev_treebank = trees.load_trees(args.dev_path)
+    print("Loaded {:,} developing examples.".format(len(dev_treebank)))
+
+
+    print("Processing dependancies for training...")
     dependancies = get_dependancies(args.train_path, args.penn_path)
+    print("Processing trees for training...")
     train_parse = [tree.convert(dep)(args.keep_valence_value)
                         for tree, dep in zip(train_treebank, dependancies)]
 
-    def loopback(parse, astar_parms = [1, 100., 10., 0.2]):
-        beams = [[(trees.LeafMyParseNode(i, l.tag, l.word).deserialize(l.labels),  1.)]
-                        for i, l in enumerate(parse.leaves())]
-        return astar_search(beams, False, astar_parms, 0)
+    print("Processing dependancies for developing...")
+    dependancies = get_dependancies(args.dev_path, args.penn_path)
+    print("Processing trees for developing...")
+    dev_parse = [tree.convert(dep)(args.keep_valence_value)
+                        for tree, dep in zip(dev_treebank, dependancies)]
 
-    import evaluate
-    start = 0
-    end = 39832
-    predicted = []
-    for parse in train_parse[start:end]:
-        predicted.append(loopback(parse).convert())
-    print (evaluate.evalb("../../POST/EVALB/", train_treebank[start:end], predicted))
+    print("Constructing vocabularies...")
+
+    tag_vocab = vocabulary.Vocabulary()
+    tag_vocab.index(parse.PAD)
+    tag_vocab.index(parse.START)
+    tag_vocab.index(parse.STOP)
+
+    word_vocab = vocabulary.Vocabulary()
+    word_vocab.index(parse.PAD)
+    word_vocab.index(parse.START)
+    word_vocab.index(parse.STOP)
+    word_vocab.index(parse.UNK)
+
+    char_vocab = vocabulary.Vocabulary()
+    char_vocab.index(parse.PAD)
+    char_vocab.index(parse.START)
+    char_vocab.index(parse.STOP)
+    for c in parse.START+parse.STOP+parse.UNK:#TODO
+        char_vocab.index(c)
+
+    label_vocab = vocabulary.Vocabulary()
+    label_vocab.index(parse.PAD)
+    label_vocab.index(parse.START)
+    label_vocab.index(parse.STOP)
+
+    for tree in train_parse:
+        nodes = [tree]
+        while nodes:
+            node = nodes.pop()
+            if isinstance(node, trees.InternalMyParseNode):
+                nodes.extend(reversed(node.children))
+            else:
+                for l in node.labels:
+                    label_vocab.index(l)
+                for c in node.word:
+                    char_vocab.index(c)
+                tag_vocab.index(node.tag)
+                word_vocab.index(node.word)
+
+    tag_vocab.freeze()
+    word_vocab.freeze()
+    char_vocab.freeze()
+    label_vocab.freeze()
+
+    print("Initializing model...")
+
+    embedding_dims = {}
+    names = ['ntags', 'nwords', 'nchars', 'nlabels']
+    vocabs = [tag_vocab, word_vocab, char_vocab, label_vocab]
+    for n,v in zip(names, vocabs):
+        embedding_dims[n] = v.size
+    model = SlabelModel(args)(embedding_dims)
+    parser = parse.Parser(
+                model,
+                tag_vocab,
+                word_vocab,
+                char_vocab,
+                label_vocab,
+                )
+
+    total_processed = 0
+    current_processed = 0
+    check_every = len(train_parse) / args.checks_per_epoch
+    best_dev_model_path = None
+    best_dev_loss = np.inf
+
+    start_time = time.time()
+
+    def check_dev():
+        nonlocal best_dev_loss
+        nonlocal best_dev_model_path
+
+        dev_start_time = time.time()
+
+        total_losses = []
+        for start_index in range(0, len(dev_parse), args.batch_size):
+            batch_losses = []
+            parse_trees = dev_parse[start_index:start_index + args.batch_size]
+            _, batch_loss = parser.parse(parse_trees, 'dev')
+            total_losses.append(batch_loss)
+
+            print(
+                "batch {:,}/{:,} "
+                "batch-loss {:.4f} "
+                "dev-elapsed {} "
+                "total-elapsed {}".format(
+                    start_index // args.batch_size + 1,
+                    int(np.ceil(len(dev_parse) / args.batch_size)),
+                    total_losses[-1],
+                    format_elapsed(dev_start_time),
+                    format_elapsed(start_time),
+                )
+            )
+
+        dev_loss = np.mean(total_losses)
+        print(
+            "dev-loss {} "
+            "dev-elapsed {} "
+            "total-elapsed {}".format(
+                dev_loss,
+                format_elapsed(dev_start_time),
+                format_elapsed(start_time),
+            )
+        )
+
+        if dev_loss < best_dev_loss:
+            # if best_dev_model_path is not None:
+            #     for ext in [".data", ".meta"]:
+            #         path = best_dev_model_path + ext
+            #         if os.path.exists(path):
+            #             print("Removing previous model file {}...".format(path))
+            #             os.remove(path)
+
+            best_dev_loss = dev_loss
+            best_dev_model_path = "{}_dev={:.4f}".format(
+                args.model_path_base, dev_loss)
+            print("Saving new best model to {}...".format(best_dev_model_path))
+            parser.model.save(best_dev_model_path)
+
+
+    for epoch in itertools.count(start=1):
+        if args.epochs is not None and epoch > args.epochs:
+            break
+
+        np.random.shuffle(train_parse)
+        epoch_start_time = time.time()
+
+        for start_index in range(0, len(train_parse), args.batch_size):
+            parse_trees = train_parse[start_index:start_index + args.batch_size]
+            _, batch_loss_value = parser.parse(parse_trees, 'train')
+            total_processed += len(parse_trees)
+            current_processed += len(parse_trees)
+
+            print(
+                "epoch {:,} "
+                "batch {:,}/{:,} "
+                "processed {:,} "
+                "batch-loss {:.4f} "
+                "epoch-elapsed {} "
+                "total-elapsed {}".format(
+                    epoch,
+                    start_index // args.batch_size + 1,
+                    int(np.ceil(len(train_parse) / args.batch_size)),
+                    total_processed,
+                    batch_loss_value,
+                    format_elapsed(epoch_start_time),
+                    format_elapsed(start_time),
+                )
+            )
+
+            if current_processed >= check_every:
+                current_processed -= check_every
+                check_dev()
 
 
 def main():
@@ -54,13 +231,37 @@ def main():
     subparsers = parser.add_subparsers()
 
     subparser = subparsers.add_parser("train")
-    subparser.set_defaults(callback=run_train)
+    subparser.set_defaults(callback=run_train, mode='train')
     subparser.add_argument("--numpy-seed", type=int)
-    subparser.add_argument("--train-path", default="data/02-21.10way.clean")
-    subparser.add_argument("--dev-path", default="data/22.auto.clean")
+    subparser.add_argument("--train-path", default="data/02-21.clean")
+    subparser.add_argument("--dev-path", default="data/22-22.clean")
     subparser.add_argument("--penn-path", default="utils/pennconverter.jar")
     subparser.add_argument("--keep-valence-value", action="store_true")
+    subparser.add_argument("--epochs", type=int)
+    subparser.add_argument("--checks-per-epoch", type=int, default=4)
+    subparser.add_argument("--batch-size", type=int, default=32)
+    subparser.add_argument("--tag-dim", type=int, default=64)
+    subparser.add_argument("--word-dim", type=int, default=128)
+    subparser.add_argument("--char-dim", type=int, default=32)
+    subparser.add_argument("--label-dim", type=int, default=128)
+    subparser.add_argument("--h-word", type=int, default=256)
+    subparser.add_argument("--h-char", type=int, default=32)
+    subparser.add_argument("--h-label", type=int, default=512)
+    subparser.add_argument("--attention-dim", type=int, default=256)
+    subparser.add_argument("--projection-dim", type=int, default=128)
+    subparser.add_argument('--dropout', default=0.4, type=float)
+    subparser.add_argument('--n-layers', type=int, default=2)
+    subparser.add_argument('--layer-norm', action='store_true')
+    subparser.add_argument("--model-path-base", required=True)
+    subparser.add_argument("--result-dir",  type=str, default='results')
+    subparser.add_argument("--model_name", type=str, default='nsptg')
+    subparser.add_argument("--gpu_id", type=int, default=0)
 
+
+    # subparser = subparsers.add_parser("test")
+    # subparser.set_defaults(callback=run_test)
+    # subparser.add_argument("--evalb-dir", default="EVALB/")
+    # subparser.add_argument("--astar-parms", nargs=4, default=[1, 100., 10., 0.2])
 
     args = parser.parse_args()
     args.callback(args)
