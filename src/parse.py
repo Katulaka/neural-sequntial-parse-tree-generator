@@ -48,14 +48,13 @@ class Parser(object):
         words, tags, labels_in, chars = zip(*batch)
 
         words = (START,) + words + (STOP,)
-
         words = tuple([self.word_vocab.index(word) for word in words])
 
         tags = (START,) + tags + (STOP,)
         tags = tuple([self.tag_vocab.index(tag) for tag in tags])
 
         chars = (tuple(START),) + chars + (tuple(STOP),)
-        chars = [tuple([self.char_vocab.index(c) for c in (tuple(START),) + chars + (tuple(STOP),)])
+        chars = [tuple([self.char_vocab.index(c) for c in ((START),) + char + ((STOP),)])
                     for char in chars]
 
         labels = [tuple([self.label_vocab.index(l) for l in (START,) + label])
