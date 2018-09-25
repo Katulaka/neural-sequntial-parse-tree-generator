@@ -81,7 +81,7 @@ class SlabelModel(BasicModel):
                                             self.n_layers)
 
 
-            char_out_shape = [tf.shape(self.tag_embed)[0], -1, self.h_char]
+            char_out_shape = [tf.shape(tag_embed)[0], -1, self.h_char]
             char_out = tf.reshape(self.ch_state[1], char_out_shape)
             w_bidi_in = tf.concat([word_embed, tag_embed, char_out], -1,
                                         name='word-bidi-in')
