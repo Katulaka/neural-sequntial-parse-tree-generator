@@ -84,7 +84,7 @@ class Parser(object):
         words = [pad(word, self.word_vocab.index(PAD), max_len) for word in words]
         tags = [pad(tag, self.tag_vocab.index(PAD), max_len) for tag in tags]
 
-        labels_len = np.reshape([pad((0,)+l, 0, max_len) for l in labels_len], [-1])
+        labels_len = np.reshape([pad((0,) + l, 0, max_len) for l in labels_len], [-1])
         max_labels_len = max(labels_len)
         WORD_PAD = self.label_vocab.index(PAD)
         labels = [pad(((WORD_PAD,),) + label, (WORD_PAD,), max_len) for label in labels]

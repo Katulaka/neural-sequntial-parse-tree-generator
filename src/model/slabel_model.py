@@ -44,14 +44,12 @@ class SlabelModel(BasicModel):
                                     self.dropout,
                                     self.is_train)
 
-            _, ch_state = tf.nn.dynamic_rnn(char_cell,
+            _, self.ch_state = tf.nn.dynamic_rnn(char_cell,
                                             char_embed,
                                             sequence_length=self.chars_len,
                                             dtype=self.dtype,
                                             scope='char-lstm')
 
-            co_shape = [self.batch_size, -1, self.h_char]
-            self.char_out = tf.reshape(ch_state[1], co_shape)
 
 
     def _add_word_bidi_lstm(self):
@@ -82,7 +80,10 @@ class SlabelModel(BasicModel):
                                             self.is_train,
                                             self.n_layers)
 
-            w_bidi_in = tf.concat([word_embed, tag_embed, self.char_out], -1,
+
+            char_out_shape = [tf.shape(self.tag_embed)[0], -1, self.h_char]
+            char_out = tf.reshape(self.ch_state[1], char_out_shape)
+            w_bidi_in = tf.concat([word_embed, tag_embed, char_out], -1,
                                         name='word-bidi-in')
 
             # Get lstm cell output
@@ -210,6 +211,7 @@ class SlabelModel(BasicModel):
             self.labels_len: batch.labels.length,
             self.targets: batch.targets,
             self.is_train : is_train}
+        import pdb; pdb.set_trace()
         return self.sess.run(output_feed, input_feed)
 
     """"Decode Part """
