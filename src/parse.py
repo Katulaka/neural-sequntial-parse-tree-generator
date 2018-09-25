@@ -1,6 +1,5 @@
 import collections
 import numpy as np
-from operator import itemgetter
 
 import trees
 # from beam.search import BeamSearch
@@ -34,31 +33,40 @@ class Parser(object):
         self.char_vocab = char_vocab
         self.label_vocab = label_vocab
 
-    def convert_one_sentence(self, tree):
+    def convert_one_sentence(self, tree, is_train):
 
-        batch = [(leaf.word, leaf.tag, tuple(leaf.labels), tuple(leaf.word))
+        def helper(word):
+            if word not in (START, STOP):
+                    count = self.word_vocab.count(word)
+                    if not count or (is_train and np.random.rand() < 1 / (1 + count)):
+                        word = UNK
+            return word
+
+        batch = [(helper(leaf.word), leaf.tag, tuple(leaf.labels), tuple(leaf.word))
                     for  leaf in tree.leaves()]
 
         words, tags, labels_in, chars = zip(*batch)
 
         words = (START,) + words + (STOP,)
-        words = itemgetter(*words)(self.word_vocab.indices)
+
+        words = tuple([self.word_vocab.index(word)) for word in words])
 
         tags = (START,) + tags + (STOP,)
-        tags = itemgetter(*tags)(self.tag_vocab.indices)
+        tags = tuple([self.tag_vocab.index(tag) for tag in tags])
 
         chars = (tuple(START),) + chars + (tuple(STOP),)
-        chars = [itemgetter(*(START,) + char + (STOP,))(self.char_vocab.indices)
+        chars = [tuple([self.char_vocab.index(c) for c in (tuple(START),) + chars + (tuple(STOP),)])
                     for char in chars]
 
-        labels = [itemgetter(*(START,) + label)(self.label_vocab.indices)
+        labels = [tuple([self.label_vocab.index(l) for l in (START,) + label])
                     for label in labels_in]
-        targets = [itemgetter(*label + (STOP,))(self.label_vocab.indices)
+
+        targets = [tuple([self.label_vocab.index(l) for l in label + (STOP,)])
                     for label in labels_in]
 
         return (words, tags, tuple(labels), tuple(chars), tuple(targets))
 
-    def convert_batch(self, parse_trees):
+    def convert_batch(self, parse_trees, is_train):
 
         def seq_len(sequences):
             return tuple([len(sequence) for sequence in sequences])
@@ -66,7 +74,7 @@ class Parser(object):
         def pad(sequence, pad, max_len):
             return sequence + (pad,)*(max_len-len(sequence))
 
-        batch = [self.convert_one_sentence(tree) for tree in parse_trees]
+        batch = [self.convert_one_sentence(tree, is_train) for tree in parse_trees]
 
         batch_len = [(len(w), len(t), seq_len(l), seq_len(c)) for w,t,l,c,_ in batch]
         words_len, tags_len, labels_len, chars_len = zip(*batch_len)
@@ -103,13 +111,13 @@ class Parser(object):
     def parse(self, parse_trees, mode):
         if mode == 'train':
             loss, _ = self.model.step(
-                            batch=self.convert_batch(parse_trees),
+                            batch=self.convert_batch(parse_trees, is_train=True),
                             output_feed=[self.model.loss, self.model.optimizer],
                             is_train=True)
             return None, loss
         elif mode == 'dev':
             loss = self.model.step(
-                        batch=self.convert_batch(parse_trees),
+                        batch=self.convert_batch(parse_trees, is_train=False),
                         output_feed=self.model.loss,
                         is_train=False)
             return None, loss
