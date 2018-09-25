@@ -107,7 +107,7 @@ class Parser(object):
         return Batch(words=bv_words, tags=bv_tags, labels=bv_labels, chars=bv_chars,
                     targets= bv_targets)
 
-    def parse(self, parse_trees, mode):
+    def parse(self, parse_trees, mode, predict_parms=None):
         if mode == 'train':
             loss, _ = self.model.step(
                             batch=self.convert_batch(parse_trees, is_train=True),
@@ -121,5 +121,33 @@ class Parser(object):
                         is_train=False)
             return None, loss
         else:
-            tree = self.predcit(sentence)
+            start = self.label_vocab.index(START)
+            stop = self.label_vocab.index(STOP)
+            astar_parms = predict_parms['astar_parms']
+            enc_bv = self.convert_batch(parse_trees, is_train=False)
+            for beam_size in predict_parms['beam_parms']:
+                hyps = BeamSearch(start, stop, beam_size).beam_search(
+                                                    self.model.encode_top_state,
+                                                    self.model.decode_topk,
+                                                    enc_bv)
+
+                grid = []
+                for i, (leaf_hyps, leaf) in enumerate(zip(hyps, sentence)):
+                    row = []
+                    for hyp in leaf_hyps:
+                        labels = np.array(self.label_vocab.values)[hyp[0]].tolist()
+                        partial_tree = trees.LeafMyParseNode(i, *leaf).deserialize(labels)
+                        if partial_tree is not None:
+                            row.append((partial_tree, hyp[1]))
+                    grid.append(row)
+
+
+                nodes = astar_search(grid, self.keep_valence_value, astar_parms)
+
+                if nodes != []:
+                    return nodes[0].trees[0], None
+
+            children = [trees.LeafMyParseNode(i, *leaf) for i,leaf in enumerate(sentence)]
+            tree = trees.InternalMyParseNode('S', children)
+
             return tree, None
