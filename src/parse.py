@@ -49,7 +49,7 @@ class Parser(object):
 
         words = (START,) + words + (STOP,)
 
-        words = tuple([self.word_vocab.index(word)) for word in words])
+        words = tuple([self.word_vocab.index(word) for word in words])
 
         tags = (START,) + tags + (STOP,)
         tags = tuple([self.tag_vocab.index(tag) for tag in tags])
