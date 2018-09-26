@@ -296,7 +296,7 @@ def main():
     subparser.add_argument("--keep-valence-value", action="store_true")
     subparser.add_argument("--epochs", type=int)
     subparser.add_argument("--checks-per-epoch", type=int, default=4)
-    subparser.add_argument("--batch-size", type=int, default=8)
+    subparser.add_argument("--batch-size", type=int, default=32)
     subparser.add_argument("--tag-dim", type=int, default=32)
     subparser.add_argument("--word-dim", type=int, default=128)
     subparser.add_argument("--char-dim", type=int, default=32)
