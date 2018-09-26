@@ -306,7 +306,7 @@ def main():
     subparser.add_argument("--h-label", type=int, default=512)
     subparser.add_argument("--attention-dim", type=int, default=256)
     subparser.add_argument("--projection-dim", type=int, default=64)
-    subparser.add_argument('--dropout', default=0.4, type=float)
+    subparser.add_argument('--dropout', default=0.2, type=float)
     subparser.add_argument('--n-layers', type=int, default=2)
     subparser.add_argument('--layer-norm', action='store_true')
     subparser.add_argument("--model-path-base", required=True)
