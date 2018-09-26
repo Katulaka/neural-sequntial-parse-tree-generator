@@ -56,11 +56,11 @@ class BasicModel(object):
 
         self.graph = self.build_graph()
         with self.graph.as_default():
-            self.saver = tf.train.Saver(max_to_keep=10)
+            self.saver = tf.train.Saver(max_to_keep=4)
             self.init_op = tf.global_variables_initializer()
 
         if not os.path.exists(os.path.join(self.result_dir,self.model_name)):
-            os.makedirs(os.path.join(self.result_dir,self.model_name))
+            os.makedirs(os.path.join(self.result_dir, self.model_name))
         self.ckpt_dir = os.path.join(self.result_dir, self.model_name, 'chekpoints')
 
         self.sess_config = tf.ConfigProto(allow_soft_placement=True)
