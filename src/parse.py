@@ -2,8 +2,8 @@ import collections
 import numpy as np
 
 import trees
-# from beam.search import BeamSearch
-# from astar.search import astar_search
+from beam.search import BeamSearch
+from astar.search import astar_search
 
 START = "<START>"
 STOP = "<STOP>"
