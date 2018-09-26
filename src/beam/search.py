@@ -70,16 +70,15 @@ class BeamSearch(object):
         self._end_token = end_token
         self._max_steps = max_steps
 
-    def beam_search(self, encode_top_state, decode_topk, enc_bv):
+    def beam_search(self, enc_state, decode_topk):
         """Performs beam search for decoding.
 
          Args:
 
-            encode_top_state: ndarray of shape (enc_length, 1),
+            enc_state: ndarray of shape (enc_length, 1),
                         the document ids to encode
             decode_topk: ndarray of shape (1), the length of the sequnce
 
-            enc_bv:
 
          Returns:
             hyps: list of Hypothesis, the best hypotheses found by beam search,
@@ -87,10 +86,8 @@ class BeamSearch(object):
          """
 
         hyps_per_sentence = []
-        # Run the encoder and extract the outputs and final state.
-        enc_state = encode_top_state(enc_bv)
         #iterate over words in seq
-        for dec_in in enc_state[1:enc_bv.words.length - 1]:
+        for dec_in in enc_state:
             c_cell = np.expand_dims(dec_in, axis=0)
             h_cell = np.expand_dims(np.zeros_like(dec_in), axis=0)
             dec_in_state = tf.contrib.rnn.LSTMStateTuple(c_cell,h_cell)
@@ -107,17 +104,20 @@ class BeamSearch(object):
                     h_cell = np.array([np.squeeze(hyp.state[1]) for hyp in hyps])
 
                     states = tf.contrib.rnn.LSTMStateTuple(c_cell, h_cell)
-                    ids, probs, new_state = decode_topk(latest_token, states,
-                                                        [enc_state],
-                                                        self._beam_size)
-                    for k,hyp in enumerate(hyps):
+                    ids, probs, new_state = decode_topk(
+                                                latest_token,
+                                                states,
+                                                [enc_state],
+                                                self._beam_size)
+
+                    for k, hyp in enumerate(hyps):
                         c_cell = np.expand_dims(new_state[0][k], axis=0)
                         h_cell = np.expand_dims(new_state[1][k], axis=0)
                         state = tf.contrib.rnn.LSTMStateTuple(c_cell, h_cell)
                         for j in xrange(self._beam_size):
-                            all_hyps.append(hyp.extend_(ids[k][j],
-                                                        probs[k][j],
-                                                        state))
+                            all_hyps.append(
+                                    hyp.extend_(ids[k][j], probs[k][j], state)
+                                    )
                     hyps = []
 
                     for h in self.best_hyps(all_hyps):
