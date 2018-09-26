@@ -35,13 +35,13 @@ class SlabelModel(BasicModel):
             char_embed = self.embedding(
                                 self.chars_in,
                                 [self.nchars, self.char_dim],
-                                self.dropout,
+                                self.dropouts[1],
                                 self.is_train,
                                 names=['char-embed','char-embed-dropout'])
 
             char_cell = self._single_cell(
                                     self.h_char,
-                                    self.dropout,
+                                    self.dropouts[1],
                                     self.is_train)
 
             _, self.ch_state = tf.nn.dynamic_rnn(char_cell,
@@ -59,24 +59,24 @@ class SlabelModel(BasicModel):
             word_embed = self.embedding(
                                     self.words_in,
                                     [self.nwords, self.word_dim],
-                                    self.dropout,
+                                    self.dropouts[1],
                                     self.is_train,
                                     names=['word-embed','word-embed-dropout'])
 
             tag_embed = self.embedding(
                                     self.tags_in,
                                     [self.ntags, self.tag_dim],
-                                    self.dropout,
+                                    self.dropouts[1],
                                     self.is_train,
                                     names=['tag-embed','tag-embed-dropout'])
 
             word_cell_fw = self._multi_cell(self.h_word,
-                                            tf.constant(self.dropout),
+                                            tf.constant(self.dropouts[0]),
                                             self.is_train,
                                             self.n_layers)
 
             word_cell_bw = self._multi_cell(self.h_word,
-                                            tf.constant(self.dropout),
+                                            tf.constant(self.dropouts[0]),
                                             self.is_train,
                                             self.n_layers)
 
@@ -105,7 +105,7 @@ class SlabelModel(BasicModel):
             label_embed = self.embedding(
                                 self.labels_in,
                                 [self.nlabels, self.label_dim],
-                                self.dropout,
+                                self.dropouts[1],
                                 self.is_train,
                                 names=['label-embed','label-embed-dropout'])
 
@@ -115,7 +115,10 @@ class SlabelModel(BasicModel):
                                         dec_init_state,
                                         tf.zeros_like(dec_init_state))
 
-            label_cell = self._single_cell(self.h_label, self.dropout, self.is_train)
+            label_cell = self._single_cell(
+                                    self.h_label,
+                                    self.dropouts[1], 
+                                    self.is_train)
 
             self.decode_out, self.decode_state = tf.nn.dynamic_rnn(
                                                 label_cell,
