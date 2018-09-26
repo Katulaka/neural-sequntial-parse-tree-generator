@@ -153,7 +153,7 @@ def run_train(args):
             sentences = [[(leaf.tag, leaf.word) for leaf in tree.leaves()]
                                 for tree in parse_trees]
 
-            gold = [[leaf.labels for leaf in tree.leaves()]
+            gold = [[tuple(leaf.labels) for leaf in tree.leaves()]
                                 for tree in parse_trees]
 
             _, batch_loss = parser.parse(sentences, gold, mode='dev')
@@ -211,7 +211,7 @@ def run_train(args):
             sentences = [[(leaf.tag, leaf.word) for leaf in tree.leaves()]
                                 for tree in parse_trees]
 
-            gold = [[leaf.labels for leaf in tree.leaves()]
+            gold = [[tuple(leaf.labels) for leaf in tree.leaves()]
                                 for tree in parse_trees]
 
             _, batch_loss_value = parser.parse(sentences, gold, mode='train')

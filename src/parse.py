@@ -44,10 +44,9 @@ class Parser(object):
 
         is_test = gold is None
 
-        tags, words = zip(*[(tag, helper(word))  for tag, word in sentence])
-        chars = [tuple(leaf.word) for word in words]
-
-        if is_test:
+        tags, words = zip(*[(tag, helper(word)) for tag, word in sentence])
+        chars = tuple([tuple(word) for word in words])
+        if not is_test:
             labels = [tuple([self.label_vocab.index(l) for l in (START,) + label])
                         for label in gold]
 
@@ -81,15 +80,15 @@ class Parser(object):
         if is_test:
             batch = [self.convert_one_sentence(sentence, None, is_train)
                         for sentence in sentences]
-            batch_len = [(len(t), len(w), seq_len(c)) for w,t,c,in batch]
-            words_len, tags_len, chars_len = zip(*batch_len)
-            words, tags, chars = zip(*batch)
+            batch_len = [(len(t), len(w), seq_len(c)) for t,w,c,in batch]
+            tags_len, words_len, chars_len = zip(*batch_len)
+            tags, words, chars = zip(*batch)
         else:
             batch = [self.convert_one_sentence(sentence, g, is_train)
-                            for sentence, g in zip(sentence, gold)]
-            batch_len = [(len(t), len(w), seq_len(c), seq_len(l)) for w,t,c,l,_ in batch]
-            words_len, tags_len, chars_len, labels_len = zip(*batch_len)
-            words, tags, chars, labels, targets = zip(*batch)
+                            for sentence, g in zip(sentences, gold)]
+            batch_len = [(len(t), len(w), seq_len(c), seq_len(l)) for t,w,c,l,_ in batch]
+            tags_len, words_len, chars_len, labels_len = zip(*batch_len)
+            tags, words, chars, labels, targets = zip(*batch)
 
         max_len = max(words_len)
 
@@ -111,8 +110,8 @@ class Parser(object):
             labels = [pad(l, LABEL_PAD, max_labels_len) for label in labels for l in label ]
 
         BatchVector = collections.namedtuple('BatchVector', 'input length')
-        bv_words = BatchVector(input=np.vstack(words), length=np.array(words_len))
         bv_tags = BatchVector(input=np.vstack(tags), length=np.array(tags_len))
+        bv_words = BatchVector(input=np.vstack(words), length=np.array(words_len))
         bv_chars = BatchVector(input=np.vstack(chars), length=chars_len)
         bv_labels = None if is_test else BatchVector(input=np.vstack(labels), length=labels_len)
         bv_targets = None if is_test else np.array(list(flatten(targets)))
