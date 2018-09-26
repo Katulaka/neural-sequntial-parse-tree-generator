@@ -33,19 +33,26 @@ class Parser(object):
         self.char_vocab = char_vocab
         self.label_vocab = label_vocab
 
-    def convert_one_sentence(self, tree, is_train):
+    def convert_one_sentence(self, sentence, gold, is_train):
 
         def helper(word):
             if word not in (START, STOP):
-                    count = self.word_vocab.count(word)
-                    if not count or (is_train and np.random.rand() < 1 / (1 + count)):
-                        word = UNK
+                count = self.word_vocab.count(word)
+                if not count or (is_train and np.random.rand() < 1 / (1 + count)):
+                    word = UNK
             return word
 
-        batch = [(helper(leaf.word), leaf.tag, tuple(leaf.labels), tuple(leaf.word))
-                    for  leaf in tree.leaves()]
+        is_test = gold is None
 
-        words, tags, labels_in, chars = zip(*batch)
+        tags, words = zip(*[(tag, helper(word))  for tag, word in sentence])
+        chars = [tuple(leaf.word) for word in words]
+
+        if is_test:
+            labels = [tuple([self.label_vocab.index(l) for l in (START,) + label])
+                        for label in gold]
+
+            targets = [tuple([self.label_vocab.index(l) for l in label + (STOP,)])
+                        for label in gold]
 
         words = (START,) + words + (STOP,)
         words = tuple([self.word_vocab.index(word) for word in words])
@@ -57,15 +64,13 @@ class Parser(object):
         chars = [tuple([self.char_vocab.index(c) for c in ((START),) + char + ((STOP),)])
                     for char in chars]
 
-        labels = [tuple([self.label_vocab.index(l) for l in (START,) + label])
-                    for label in labels_in]
+        if is_test:
+            return (tags, words, tuple(chars))
+        return (tags, words, tuple(chars), tuple(labels), tuple(targets))
 
-        targets = [tuple([self.label_vocab.index(l) for l in label + (STOP,)])
-                    for label in labels_in]
 
-        return (words, tags, tuple(labels), tuple(chars), tuple(targets))
-
-    def convert_batch(self, parse_trees, is_train):
+    def convert_batch(self, sentences, gold, is_train):
+        is_test = gold is None
 
         def seq_len(sequences):
             return tuple([len(sequence) for sequence in sequences])
@@ -73,22 +78,23 @@ class Parser(object):
         def pad(sequence, pad, max_len):
             return sequence + (pad,)*(max_len-len(sequence))
 
-        batch = [self.convert_one_sentence(tree, is_train) for tree in parse_trees]
-
-        batch_len = [(len(w), len(t), seq_len(l), seq_len(c)) for w,t,l,c,_ in batch]
-        words_len, tags_len, labels_len, chars_len = zip(*batch_len)
+        if is_test:
+            batch = [self.convert_one_sentence(sentence, None, is_train)
+                        for sentence in sentences]
+            batch_len = [(len(t), len(w), seq_len(c)) for w,t,c,in batch]
+            words_len, tags_len, chars_len = zip(*batch_len)
+            words, tags, chars = zip(*batch)
+        else:
+            batch = [self.convert_one_sentence(sentence, g, is_train)
+                            for sentence, g in zip(sentence, gold)]
+            batch_len = [(len(t), len(w), seq_len(c), seq_len(l)) for w,t,c,l,_ in batch]
+            words_len, tags_len, chars_len, labels_len = zip(*batch_len)
+            words, tags, chars, labels, targets = zip(*batch)
 
         max_len = max(words_len)
 
-        words, tags, labels, chars, targets = zip(*batch)
         words = [pad(word, self.word_vocab.index(PAD), max_len) for word in words]
         tags = [pad(tag, self.tag_vocab.index(PAD), max_len) for tag in tags]
-
-        labels_len = np.reshape([pad((0,) + l, 0, max_len) for l in labels_len], [-1])
-        max_labels_len = max(labels_len)
-        WORD_PAD = self.label_vocab.index(PAD)
-        labels = [pad(((WORD_PAD,),) + label, (WORD_PAD,), max_len) for label in labels]
-        labels = [pad(l, WORD_PAD, max_labels_len) for label in labels for l in label ]
 
         chars_len = np.reshape([pad(c, 0, max_len) for c in chars_len], [-1])
         max_chars_len = max(chars_len)
@@ -96,27 +102,40 @@ class Parser(object):
         chars = [pad(char, (CHAR_PAD,), max_len) for char in chars]
         chars = [pad(c, CHAR_PAD, max_chars_len) for char in chars for c in char]
 
+        if not is_test:
+            labels_len = [pad((0,) + l, 0, max_len) for l in labels_len]
+            labels_len = np.reshape(labels_len, [-1])
+            max_labels_len = max(labels_len)
+            LABEL_PAD = self.label_vocab.index(PAD)
+            labels = [pad(((LABEL_PAD,),) + label, (LABEL_PAD,), max_len) for label in labels]
+            labels = [pad(l, LABEL_PAD, max_labels_len) for label in labels for l in label ]
+
         BatchVector = collections.namedtuple('BatchVector', 'input length')
         bv_words = BatchVector(input=np.vstack(words), length=np.array(words_len))
         bv_tags = BatchVector(input=np.vstack(tags), length=np.array(tags_len))
-        bv_labels = BatchVector(input=np.vstack(labels), length=labels_len)
         bv_chars = BatchVector(input=np.vstack(chars), length=chars_len)
+        bv_labels = None if is_test else BatchVector(input=np.vstack(labels), length=labels_len)
+        bv_targets = None if is_test else np.array(list(flatten(targets)))
 
-        bv_targets = np.array(list(flatten(targets)))
-        Batch = collections.namedtuple('Batch', 'words tags labels chars targets')
-        return Batch(words=bv_words, tags=bv_tags, labels=bv_labels, chars=bv_chars,
-                    targets= bv_targets)
+        Batch = collections.namedtuple('Batch', 'tags words chars labels targets')
+        return Batch(
+                tags=bv_tags,
+                words=bv_words,
+                chars=bv_chars,
+                labels=bv_labels,
+                targets= bv_targets
+                )
 
-    def parse(self, parse_trees, mode, predict_parms=None):
+    def parse(self, sentences, gold, mode, predict_parms=None):
         if mode == 'train':
             loss, _ = self.model.step(
-                            batch=self.convert_batch(parse_trees, is_train=True),
-                            output_feed=[self.model.loss, self.model.optimizer],
-                            is_train=True)
+                        batch=self.convert_batch(sentences, gold, is_train=True),
+                        output_feed=[self.model.loss, self.model.optimizer],
+                        is_train=True)
             return None, loss
         elif mode == 'dev':
             loss = self.model.step(
-                        batch=self.convert_batch(parse_trees, is_train=False),
+                        batch=self.convert_batch(sentences, gold, is_train=False),
                         output_feed=self.model.loss,
                         is_train=False)
             return None, loss
@@ -133,7 +152,7 @@ class Parser(object):
                                                     )
 
                 grid = []
-                for i, (leaf_hyps, leaf) in enumerate(zip(hyps, sentence)):
+                for i, (leaf_hyps, leaf) in enumerate(zip(hyps, sentences)):
                     row = []
                     for hyp in leaf_hyps:
                         labels = np.array(self.label_vocab.values)[hyp[0]].tolist()

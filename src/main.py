@@ -149,7 +149,14 @@ def run_train(args):
         for start_index in range(0, len(dev_parse), args.batch_size):
             batch_losses = []
             parse_trees = dev_parse[start_index:start_index + args.batch_size]
-            _, batch_loss = parser.parse(parse_trees, 'dev')
+
+            sentences = [[(leaf.tag, leaf.word) for leaf in tree.leaves()]
+                                for tree in parse_trees]
+
+            gold = [[leaf.labels for leaf in tree.leaves()]
+                                for tree in parse_trees]
+
+            _, batch_loss = parser.parse(sentences, gold, mode='dev')
             total_losses.append(batch_loss)
 
             print(
@@ -200,7 +207,14 @@ def run_train(args):
 
         for start_index in range(0, len(train_parse), args.batch_size):
             parse_trees = train_parse[start_index:start_index + args.batch_size]
-            _, batch_loss_value = parser.parse(parse_trees, 'train')
+
+            sentences = [[(leaf.tag, leaf.word) for leaf in tree.leaves()]
+                                for tree in parse_trees]
+
+            gold = [[leaf.labels for leaf in tree.leaves()]
+                                for tree in parse_trees]
+
+            _, batch_loss_value = parser.parse(sentences, gold, mode='train')
             total_processed += len(parse_trees)
             current_processed += len(parse_trees)
 
@@ -224,6 +238,49 @@ def run_train(args):
             if current_processed >= check_every:
                 current_processed -= check_every
                 check_dev()
+
+def run_test(args):
+    print("Loading test trees from {}...".format(args.test_path))
+    test_treebank = trees.load_trees(args.test_path)
+    print("Loaded {:,} test examples.".format(len(test_treebank)))
+
+    print("Loading model from {}...".format(args.model_path_base))
+    # model = dy.ParameterCollection()
+    # [parser] = dy.load(args.model_path_base, model)
+    #TODO
+
+    print("Parsing test sentences...")
+
+    start_time = time.time()
+
+    test_predicted = []
+    predict_parms = {'astar_parms': args.astar_parms, 'beam_parms':args.beam_size}
+    for i, tree in  enumerate(test_treebank):
+        sentence = [(leaf.tag, leaf.word) for leaf in tree.leaves()]
+        prediction_start_time = time.time()
+        predicted, _ = parser.parse(sentence, None, mode='test', predict_parms=predict_parms)
+        print(
+            "processed {:,}/{:,} "
+            "prediction-elapsed {} "
+            "total-elapsed {}".format(
+                i+1,
+                len(test_treebank),
+                format_elapsed(prediction_start_time),
+                format_elapsed(start_time),
+            )
+        )
+        test_predicted.append(predicted.convert())
+
+    test_fscore = evaluate.evalb(args.evalb_dir, test_treebank, test_predicted)
+
+    print(
+        "test-fscore {} "
+        "test-elapsed {}".format(
+            test_fscore,
+            format_elapsed(start_time),
+        )
+    )
+
 
 
 def main():
