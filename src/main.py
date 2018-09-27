@@ -126,6 +126,7 @@ def run_train(args):
         with open(config_path, 'rb') as f:
             config.update(pickle.load(f))
     else:
+        os.makedirs(args.model_path_base)
         config.update({'ntags' : tag_vocab.size,
                         'nwords' : word_vocab.size,
                         'nchars': char_vocab.size,
