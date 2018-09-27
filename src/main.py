@@ -136,7 +136,7 @@ def run_train(args):
         with open(config_path, 'wb') as f:
             pickle.dump(config, f, pickle.HIGHEST_PROTOCOL)
 
-    model = SlabelModel(config)
+    model = NSPTGModel(config)
 
     parser = parse.Parser(
             model,
@@ -262,7 +262,8 @@ def run_test(args):
     if os.path.exists(config_path, 'rb'):
         with open(config_path) as f:
             config.update(pickle.load(f))
-    model = SlabelModel(config)
+
+    model = NSPTGModel(config)
 
     parser = parse.Parser(
                 model,
