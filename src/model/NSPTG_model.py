@@ -2,7 +2,7 @@ import tensorflow as tf
 
 from .basic_model import BasicModel
 
-class SlabelModel(BasicModel):
+class NSPTGModel(BasicModel):
 
     def __init__ (self, config):
         BasicModel.__init__(self, config)

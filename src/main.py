@@ -11,7 +11,7 @@ import parse
 import trees
 import vocabulary
 
-from model.slabel_model import SlabelModel
+from model.NSPTG_model import NSPTGModel
 
 def format_elapsed(start_time):
     elapsed_time = int(time.time() - start_time)
