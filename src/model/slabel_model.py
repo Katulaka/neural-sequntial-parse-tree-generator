@@ -117,7 +117,7 @@ class SlabelModel(BasicModel):
 
             label_cell = self._single_cell(
                                     self.h_label,
-                                    self.dropouts[1], 
+                                    self.dropouts[1],
                                     self.is_train)
 
             self.decode_out, self.decode_state = tf.nn.dynamic_rnn(
@@ -188,17 +188,17 @@ class SlabelModel(BasicModel):
 
     def build_graph(self):
         with tf.Graph().as_default() as g:
-            with tf.device('/gpu:{}'.format(self.gpu_id)):
-                with tf.variable_scope('slabel', initializer=self.initializer, dtype=self.dtype):
-                    self._add_placeholders()
-                    self._add_char_lstm()
-                    self._add_word_bidi_lstm()
-                    self._add_label_lstm_layer()
-                    self._add_attention()
-                    self._add_projection()
-                    self._add_loss()
-                    self._add_train_op()
-            return g
+            # with tf.device('/gpu:{}'.format(self.gpu_id)):
+            with tf.variable_scope('slabel', initializer=self.initializer, dtype=self.dtype):
+                self._add_placeholders()
+                self._add_char_lstm()
+                self._add_word_bidi_lstm()
+                self._add_label_lstm_layer()
+                self._add_attention()
+                self._add_projection()
+                self._add_loss()
+                self._add_train_op()
+        return g
 
 
         """"TRAIN Part """

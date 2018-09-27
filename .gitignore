@@ -6,3 +6,5 @@ __pycache__/
 # EVALB output files
 EVALB/evalb
 EVALB/evalb.dSYM/
+
+results
