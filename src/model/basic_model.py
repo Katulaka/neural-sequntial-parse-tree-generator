@@ -1,11 +1,9 @@
 from __future__ import division
 from __future__ import print_function
 
-import copy
 import os
 import tensorflow as tf
 from abc import ABCMeta, abstractmethod
-import json
 
 
 class BasicModel(object):
@@ -14,7 +12,7 @@ class BasicModel(object):
 
     def __init__ (self, config):
 
-        for k,v in vars(config).items():
+        for k, v in config.items():
             setattr(self, k, v)
 
         self.optimizer_fn = tf.train.AdamOptimizer
@@ -22,6 +20,21 @@ class BasicModel(object):
         self.initializer = tf.contrib.layers.xavier_initializer()
         self.activation_fn = tf.nn.relu
 
+        self.graph = self.build_graph()
+
+        with self.graph.as_default():
+            self.saver = tf.train.Saver(max_to_keep=1)
+            self.init_op = tf.global_variables_initializer()
+
+        if not os.path.exists(self.model_path_base):
+            os.makedirs(self.model_path_base)
+        self.ckpt_dir = os.path.join(self.model_path_base, 'chekpoints')
+
+        self.sess_config = tf.ConfigProto(allow_soft_placement=True)
+        self.sess_config.gpu_options.allow_growth=True
+        self.sess = tf.Session(config=self.sess_config, graph=self.graph)
+
+        self.init()
         # self.sw = tf.summary.FileWriter(self.sw_dir, self.graph)
 
         # @staticmethod
@@ -49,27 +62,6 @@ class BasicModel(object):
         else:
             print('Loading model from folder: %s' % self.ckpt_dir)
             self.saver.restore(self.sess, checkpoint.model_checkpoint_path)
-
-    def __call__ (self, embedding_dims):
-        for k,v in embedding_dims.items():
-            setattr(self, k, v)
-
-        self.graph = self.build_graph()
-        with self.graph.as_default():
-            self.saver = tf.train.Saver(max_to_keep=4)
-            self.init_op = tf.global_variables_initializer()
-
-        if not os.path.exists(os.path.join(self.result_dir,self.model_name)):
-            os.makedirs(os.path.join(self.result_dir, self.model_name))
-        self.ckpt_dir = os.path.join(self.result_dir, self.model_name, 'chekpoints')
-
-        self.sess_config = tf.ConfigProto(allow_soft_placement=True)
-        self.sess_config.gpu_options.allow_growth=True
-        self.sess = tf.Session(config=self.sess_config, graph=self.graph)
-
-        self.init()
-
-        return self
 
     @abstractmethod
     def build_graph(self, graph):
@@ -107,14 +99,13 @@ class BasicModel(object):
 
     def save(self, filename):
     # This function is usually common to all your models, Here is an example:
-        global_step = self.sess.run(self.global_step)
         if not os.path.exists(self.ckpt_dir):
             try:
                 os.makedirs(os.path.abspath(self.ckpt_dir))
             except OSError as exc: # Guard against race condition
                 if exc.errno != errno.EEXIST:
                     raise
-        self.saver.save(self.sess, os.path.join(self.ckpt_dir, filename), global_step)
+        self.saver.save(self.sess, os.path.join(self.ckpt_dir, filename))
 
 
     def freeze_graph(self, output_node_names):

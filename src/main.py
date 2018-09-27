@@ -1,6 +1,8 @@
 import argparse
 import itertools
 import numpy as np
+import os
+import pickle
 from subprocess import Popen, DEVNULL, PIPE
 import time
 
@@ -43,7 +45,6 @@ def loopback(parse, astar_parms, keep_valence_value):
     beams = [[(trees.LeafMyParseNode(i, l.tag, l.word).deserialize(l.labels),  1.)]
                     for i, l in enumerate(parse.leaves())]
     return astar_search(beams, keep_valence_value, astar_parms, 0)
-
 
 def run_train(args):
     if args.numpy_seed is not None:
@@ -88,7 +89,7 @@ def run_train(args):
     char_vocab.index(parse.PAD)
     char_vocab.index(parse.START)
     char_vocab.index(parse.STOP)
-    for c in parse.START+parse.STOP+parse.UNK:#TODO
+    for c in parse.START+parse.STOP+parse.UNK:
         char_vocab.index(c)
 
     label_vocab = vocabulary.Vocabulary()
@@ -117,19 +118,32 @@ def run_train(args):
 
     print("Initializing model...")
 
-    embedding_dims = {}
-    names = ['ntags', 'nwords', 'nchars', 'nlabels']
-    vocabs = [tag_vocab, word_vocab, char_vocab, label_vocab]
-    for n,v in zip(names, vocabs):
-        embedding_dims[n] = v.size
-    model = SlabelModel(args)(embedding_dims)
+    config = {}
+    config['mode'] = args.mode
+    config['model_path_base'] = args.model_path_base
+    config_path = os.path.join(args.model_path_base, 'config.pkl')
+    if os.path.exists(config_path):
+        with open(config_path, 'rb') as f:
+            config.update(pickle.load(f))
+    else:
+        config.update({'ntags' : tag_vocab.size,
+                        'nwords' : word_vocab.size,
+                        'nchars': char_vocab.size,
+                        'nlabels': label_vocab.size})
+        config.update({k.split("nn_")[-1] : v for k,v in vars(args).items()
+                if k.startswith("nn_")})
+        with open(config_path, 'wb') as f:
+            pickle.dump(config, f, pickle.HIGHEST_PROTOCOL)
+
+    model = SlabelModel(config)
+
     parser = parse.Parser(
-                model,
-                tag_vocab,
-                word_vocab,
-                char_vocab,
-                label_vocab,
-                )
+            model,
+            tag_vocab,
+            word_vocab,
+            char_vocab,
+            label_vocab,
+            )
 
     total_processed = 0
     current_processed = 0
@@ -184,17 +198,12 @@ def run_train(args):
         )
 
         if dev_loss < best_dev_loss:
-            # if best_dev_model_path is not None:
-            #     for ext in [".data", ".meta"]:
-            #         path = best_dev_model_path + ext
-            #         if os.path.exists(path):
-            #             print("Removing previous model file {}...".format(path))
-            #             os.remove(path)
 
             best_dev_loss = dev_loss
-            best_dev_model_path = "{}_dev={:.4f}".format(
-                args.model_path_base, dev_loss)
-            print("Saving new best model to {}...".format(best_dev_model_path))
+            best_dev_model_path = "dev={:.4f}".format(dev_loss)
+            print("Saving new best model to {}/checkpoints/{}...".format(
+                                                        args.model_path_base,
+                                                        best_dev_model_path))
             parser.model.save(best_dev_model_path)
 
 
@@ -245,9 +254,22 @@ def run_test(args):
     print("Loaded {:,} test examples.".format(len(test_treebank)))
 
     print("Loading model from {}...".format(args.model_path_base))
-    # model = dy.ParameterCollection()
-    # [parser] = dy.load(args.model_path_base, model)
-    #TODO
+
+    config['mode'] = args.mode
+    config['model_path_base'] = args.model_path_base
+    config_path = os.path.join(args.model_path_base, 'config.pkl')
+    if os.path.exists(config_path, 'rb'):
+        with open(config_path) as f:
+            config.update(pickle.load(f))
+    model = SlabelModel(config)
+
+    parser = parse.Parser(
+                model,
+                tag_vocab,
+                word_vocab,
+                char_vocab,
+                label_vocab,
+                )
 
     print("Parsing test sentences...")
 
@@ -297,29 +319,27 @@ def main():
     subparser.add_argument("--epochs", type=int)
     subparser.add_argument("--checks-per-epoch", type=int, default=4)
     subparser.add_argument("--batch-size", type=int, default=32)
-    subparser.add_argument("--tag-dim", type=int, default=32)
-    subparser.add_argument("--word-dim", type=int, default=128)
-    subparser.add_argument("--char-dim", type=int, default=32)
-    subparser.add_argument("--label-dim", type=int, default=32)
-    subparser.add_argument("--h-word", type=int, default=128)
-    subparser.add_argument("--h-char", type=int, default=32)
-    subparser.add_argument("--h-label", type=int, default=384)
-    subparser.add_argument("--attention-dim", type=int, default=128)
-    subparser.add_argument("--projection-dim", type=int, default=64)
-    subparser.add_argument('--dropouts', nargs='+', default=[0.2, 0.5], type=float)
-    subparser.add_argument('--n-layers', type=int, default=2)
-    subparser.add_argument('--layer-norm', action='store_true')
+    subparser.add_argument("--tag-dim", type=int, default=32, dest="nn_tag_dim")
+    subparser.add_argument("--word-dim", type=int, default=128, dest="nn_word_dim")
+    subparser.add_argument("--char-dim", type=int, default=32, dest="nn_char_dim")
+    subparser.add_argument("--label-dim", type=int, default=32, dest="nn_label_dim")
+    subparser.add_argument("--h-word", type=int, default=128, dest="nn_h_word")
+    subparser.add_argument("--h-char", type=int, default=32, dest="nn_h_char")
+    subparser.add_argument("--h-label", type=int, default=384, dest="nn_h_label")
+    subparser.add_argument("--attention-dim", type=int, default=128, dest="nn_attention_dim")
+    subparser.add_argument("--projection-dim", type=int, default=64, dest="nn_projection_dim")
+    subparser.add_argument('--dropouts', nargs='+', default=[0.2, 0.5], type=float, dest="nn_dropouts")
+    subparser.add_argument('--n-layers', type=int, default=2, dest="nn_n_layers")
+    subparser.add_argument('--layer-norm', action='store_true', dest="nn_layer_norm")
     subparser.add_argument("--model-path-base", required=True)
-    subparser.add_argument("--result-dir",  type=str, default='results')
-    subparser.add_argument("--model_name", type=str, default='nsptg')
-    subparser.add_argument("--gpu_id", type=int, default=0)
-
+    # subparser.add_argument("--gpu_id", type=int, default=0)
 
     subparser = subparsers.add_parser("test")
-    subparser.set_defaults(callback=run_test)
+    subparser.set_defaults(callback=run_test, mode='test')
+    subparser.add_argument("--model-path-base", required=True)
     subparser.add_argument("--evalb-dir", default="EVALB/")
     subparser.add_argument("--astar-parms", type=float, nargs=4, default=[1, 60., 1, 0.2])
-    subparser.add_argument("--beam-size", type=int, default=4)
+    subparser.add_argument("--beam-size", type=int, default=5)
 
     args = parser.parse_args()
     args.callback(args)
