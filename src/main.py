@@ -213,7 +213,7 @@ def run_train(args):
         if args.epochs is not None and epoch > args.epochs:
             break
 
-        np.random.shuffle(train_parse)
+        # np.random.shuffle(train_parse)
         epoch_start_time = time.time()
 
         for start_index in range(0, len(train_parse), args.batch_size):
