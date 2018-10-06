@@ -131,8 +131,10 @@ def run_train(args):
                         'nwords' : word_vocab.size,
                         'nchars': char_vocab.size,
                         'nlabels': label_vocab.size})
-        config.update({k.split("nn_")[-1] : v for k,v in vars(args).items()
-                if k.startswith("nn_")})
+        config.update({k.split("nn_")[-1] : v
+                            for k,v in vars(args).items()
+                                    if k.startswith("nn_")}
+                    )
         with open(config_path, 'wb') as f:
             pickle.dump(config, f, pickle.HIGHEST_PROTOCOL)
 

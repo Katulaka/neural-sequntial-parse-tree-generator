@@ -199,7 +199,7 @@ class NSPTGModel(BasicModel):
                     self._add_projection()
                     self._add_loss()
                     self._add_train_op()
-        return g
+            return g
 
 
         """"TRAIN Part """
