@@ -128,13 +128,19 @@ class NSPTGModel(BasicModel):
     def _add_attention(self):
         with tf.variable_scope('Attention'):
             es_shape = tf.shape(self.encode_state)[0]
-            k = tf.layers.dense(self.decode_out, self.attention_dim)
+            k = tf.layers.dense(
+                            self.decode_out,
+                            self.attention_dim,
+                            use_bias=False
+                        )
             atten_k = tf.reshape(k, [es_shape, -1, self.attention_dim])
 
             atten_q = tf.layers.dense(
                                 self.encode_state,
                                 self.attention_dim,
-                                activation=self.activation_fn)
+                                activation=self.activation_fn,
+                                use_bias=False
+                            )
 
             alpha = tf.nn.softmax(tf.einsum('aij,akj->aik', atten_k, atten_q))
             context = tf.einsum('aij,ajk->aik', alpha, self.encode_state)
@@ -148,7 +154,9 @@ class NSPTGModel(BasicModel):
             logits = tf.layers.dense(
                             self.attention,
                             self.projection_dim,
-                            activation=self.activation_fn)
+                            activation=self.activation_fn,
+                            use_bias=False
+                        )
 
             mask_t = tf.sequence_mask(self.labels_len, dtype=tf.int32)
             v = tf.dynamic_partition(logits, mask_t, 2)[1]
