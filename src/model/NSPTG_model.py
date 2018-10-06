@@ -95,9 +95,9 @@ class NSPTGModel(BasicModel):
                                 dtype=self.dtype)
             w_bidi_out_c = tf.concat(w_bidi_out , -1, name='word-bidi-out')
 
-            encode_state = tf.concat([w_bidi_in, w_bidi_out_c], -1)
+            self.encode_state = tf.concat([w_bidi_in, w_bidi_out_c], -1)
 
-            self.encode_state = tf.layers.dense(encode_state, self.h_label)
+            # self.encode_state = tf.layers.dense(encode_state, self.h_label)
 
     def _add_label_lstm_layer(self):
         """Generate sequences of tags"""
@@ -185,6 +185,7 @@ class NSPTGModel(BasicModel):
         self.optimizer = self.optimizer_fn().minimize(
                                                 self.loss,
                                                 global_step=self.global_step)
+
 
     def build_graph(self):
         with tf.Graph().as_default() as g:
