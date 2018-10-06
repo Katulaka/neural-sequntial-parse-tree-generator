@@ -209,7 +209,6 @@ def run_train(args):
                                                         best_dev_model_path))
             parser.model.save(best_dev_model_path)
 
-
     for epoch in itertools.count(start=1):
         if args.epochs is not None and epoch > args.epochs:
             break

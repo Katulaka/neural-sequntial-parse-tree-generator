@@ -50,8 +50,6 @@ class NSPTGModel(BasicModel):
                                             dtype=self.dtype,
                                             scope='char-lstm')
 
-
-
     def _add_word_bidi_lstm(self):
         """ Bidirectional LSTM """
         with tf.variable_scope('word-LSTM-Layer'):
@@ -186,7 +184,6 @@ class NSPTGModel(BasicModel):
                                                 self.loss,
                                                 global_step=self.global_step)
 
-
     def build_graph(self):
         with tf.Graph().as_default() as g:
             with tf.device('/gpu:{}'.format(self.gpu_id)):
@@ -200,7 +197,6 @@ class NSPTGModel(BasicModel):
                     self._add_loss()
                     self._add_train_op()
             return g
-
 
         """"TRAIN Part """
     def step(self, batch, output_feed, is_train=False):

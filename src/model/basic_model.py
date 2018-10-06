@@ -30,6 +30,7 @@ class BasicModel(object):
             os.makedirs(self.model_path_base)
         self.ckpt_dir = os.path.join(self.model_path_base, 'chekpoints')
 
+
         self.sess_config = tf.ConfigProto(allow_soft_placement=True)
         self.sess_config.gpu_options.allow_growth=True
         self.sess = tf.Session(config=self.sess_config, graph=self.graph)
