@@ -189,16 +189,16 @@ class NSPTGModel(BasicModel):
 
     def build_graph(self):
         with tf.Graph().as_default() as g:
-            # with tf.device('/gpu:{}'.format(self.gpu_id)):
-            with tf.variable_scope('slabel', initializer=self.initializer, dtype=self.dtype):
-                self._add_placeholders()
-                self._add_char_lstm()
-                self._add_word_bidi_lstm()
-                self._add_label_lstm_layer()
-                self._add_attention()
-                self._add_projection()
-                self._add_loss()
-                self._add_train_op()
+            with tf.device('/gpu:{}'.format(self.gpu_id)):
+                with tf.variable_scope('slabel', initializer=self.initializer, dtype=self.dtype):
+                    self._add_placeholders()
+                    self._add_char_lstm()
+                    self._add_word_bidi_lstm()
+                    self._add_label_lstm_layer()
+                    self._add_attention()
+                    self._add_projection()
+                    self._add_loss()
+                    self._add_train_op()
         return g
 
 

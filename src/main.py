@@ -334,7 +334,7 @@ def main():
     subparser.add_argument('--n-layers', type=int, default=2, dest="nn_n_layers")
     subparser.add_argument('--layer-norm', action='store_true', dest="nn_layer_norm")
     subparser.add_argument("--model-path-base", required=True)
-    # subparser.add_argument("--gpu_id", type=int, default=0)
+    subparser.add_argument("--gpu-id", type=int, default=0, dest="nn_gpu_id")
 
     subparser = subparsers.add_parser("test")
     subparser.set_defaults(callback=run_test, mode='test')
