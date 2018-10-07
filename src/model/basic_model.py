@@ -61,13 +61,12 @@ class BasicModel(object):
             else:
                 raise ValueError('Model not found to restore.')
         else:
-            print('Loading model from folder: %s' % self.ckpt_dir)
+            print('Loading model from folder: {}'.fromat(self.ckpt_dir))
             self.saver.restore(self.sess, checkpoint.model_checkpoint_path)
 
     @abstractmethod
     def build_graph(self, graph):
         raise NotImplementedError
-
 
     def embedding(self, input, shape, dropout, is_train, names):
         embed_mat = tf.get_variable(shape=shape, name=names[0])

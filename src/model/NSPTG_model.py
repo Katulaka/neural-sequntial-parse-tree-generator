@@ -30,7 +30,7 @@ class NSPTGModel(BasicModel):
             self.is_train = tf.placeholder(tf.bool, shape=(), name='is-train')
 
     def _add_char_lstm(self):
-        with tf.variable_scope('char-LSTM-Layer', initializer=self.initializer):
+        with tf.variable_scope('char-LSTM-Layer'):
 
             char_embed = self.embedding(
                                 self.chars_in,
@@ -210,14 +210,14 @@ class NSPTGModel(BasicModel):
     def step(self, batch, output_feed, is_train=False):
         """ Training step, returns the loss"""
         input_feed = {
-            self.words_in: batch.words.input,
-            self.words_len: batch.words.length,
+            self.words_in : batch.words.input,
+            self.words_len : batch.words.length,
             self.chars_in : batch.chars.input,
             self.chars_len : batch.chars.length,
             self.tags_in : batch.tags.input,
-            self.labels_in: batch.labels.input,
-            self.labels_len: batch.labels.length,
-            self.targets: batch.targets,
+            self.labels_in : batch.labels.input,
+            self.labels_len : batch.labels.length,
+            self.targets : batch.targets,
             self.is_train : is_train}
         return self.sess.run(output_feed, input_feed)
 
