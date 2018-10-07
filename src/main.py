@@ -190,6 +190,8 @@ def run_train(args):
             )
 
         dev_loss = np.mean(total_losses)
+
+
         print(
             "dev-loss {} "
             "dev-elapsed {} "
@@ -225,7 +227,13 @@ def run_train(args):
             gold = [[tuple(leaf.labels) for leaf in tree.leaves()]
                                 for tree in parse_trees]
 
-            _, batch_loss_value = parser.parse(sentences, gold, mode='train')
+            _, batch_loss_value = parser.parse(
+                                            sentences,
+                                            gold,
+                                            mode='train'
+                                         )
+
+
             total_processed += len(parse_trees)
             current_processed += len(parse_trees)
 
