@@ -69,12 +69,12 @@ class NSPTGModel(BasicModel):
                                     names=['tag-embed','tag-embed-dropout'])
 
             word_cell_fw = self._multi_cell(self.h_word,
-                                            tf.constant(self.dropouts[0]),
+                                            self.dropouts[0],
                                             self.is_train,
                                             self.n_layers)
 
             word_cell_bw = self._multi_cell(self.h_word,
-                                            tf.constant(self.dropouts[0]),
+                                            self.dropouts[0],
                                             self.is_train,
                                             self.n_layers)
 
