@@ -194,11 +194,10 @@ class LeafMyParseNode(MyParseNode):
         for child in self.parent.children:
             if child != self:
                 yield child
-        # return [child for child in self.parent.children if child != self]
 
     def serialize(self, keep_valence_value):
-        # self.label = tuple(self.tag)
-        self.labels = []
+        self.labels = [self.tag]
+        # self.labels = []
         return self
 
     def deserialize(self, labels):
@@ -239,7 +238,6 @@ class MissMyParseNode(MyParseNode):
         for child in self.parent.children:
             if child != self:
                 yield child
-        # return [child for child in self.parent.children if child != self]
 
     def convert(self):
         return LeafTreebankNode(self.label, self.label)
