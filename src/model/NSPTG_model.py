@@ -131,7 +131,7 @@ class NSPTGModel(BasicModel):
             k = tf.layers.dense(
                             self.decode_out,
                             self.attention_dim,
-                            use_bias=False
+                            use_bias=False,
                             kernel_initializer=self.initializer
                         )
             atten_k = tf.reshape(k, [es_shape, -1, self.attention_dim])
