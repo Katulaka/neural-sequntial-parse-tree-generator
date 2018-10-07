@@ -195,7 +195,12 @@ class NSPTGModel(BasicModel):
                             dtype=tf.int32,
                             name='epoch')
 
-        self.optimizer = self.optimizer_fn(learning_rate=0.001).minimize(
+        learning_rate = tf.constant(
+                            float(0.001),
+                            dtype=self.dtype,
+                            name='learning_rate'
+                        )
+        self.optimizer = self.optimizer_fn(learning_rate=learning_rate).minimize(
                                                 self.loss,
                                                 global_step=self.global_step)
 
