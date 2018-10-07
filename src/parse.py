@@ -42,30 +42,28 @@ class Parser(object):
                     word = UNK
             return word
 
-        is_test = gold is None
-
-        tags, words = zip(*[(tag, helper(word)) for tag, word in sentence])
-        chars = tuple([tuple(word) for word in words])
-        if not is_test:
-            labels = [tuple([self.label_vocab.index(l) for l in (START,) + label])
-                        for label in gold]
-
-            targets = [tuple([self.label_vocab.index(l) for l in label + (STOP,)])
-                        for label in gold]
-
-        words = (START,) + words + (STOP,)
-        words = tuple([self.word_vocab.index(word) for word in words])
-
-        tags = (START,) + tags + (STOP,)
-        tags = tuple([self.tag_vocab.index(tag) for tag in tags])
+        tags, words, chars = zip(*[(tag, helper(word), tuple(word)) for tag, word in sentence])
 
         chars = (tuple(START),) + chars + (tuple(STOP),)
-        chars = [tuple([self.char_vocab.index(c) for c in ((START),) + char + ((STOP),)])
-                    for char in chars]
+        chars = tuple(tuple(self.char_vocab.index(c) for c in ((START),) + ch + ((STOP),))
+                        for ch in chars)
 
-        if is_test:
-            return (tags, words, tuple(chars))
-        return (tags, words, tuple(chars), tuple(labels), tuple(targets))
+        words = (START,) + words + (STOP,)
+        words = tuple(self.word_vocab.index(word) for word in words)
+
+        tags = (START,) + tags + (STOP,)
+        tags = tuple(self.tag_vocab.index(tag) for tag in tags)
+
+        if gold is not None:
+            labels = tuple(tuple(self.label_vocab.index(l) for l in (START,) + label)
+                                    for label in gold)
+
+            targets = tuple(tuple(self.label_vocab.index(l) for l in label + (STOP,))
+                            for label in gold)
+
+            return (tags, words, chars, labels, targets)
+
+        return (tags, words, chars)
 
 
     def convert_batch(self, sentences, gold, is_train):
