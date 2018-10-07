@@ -132,6 +132,7 @@ class NSPTGModel(BasicModel):
                             self.decode_out,
                             self.attention_dim,
                             use_bias=False
+                            kernel_initializer=self.initializer
                         )
             atten_k = tf.reshape(k, [es_shape, -1, self.attention_dim])
 
@@ -139,7 +140,8 @@ class NSPTGModel(BasicModel):
                                 self.encode_state,
                                 self.attention_dim,
                                 activation=self.activation_fn,
-                                use_bias=False
+                                use_bias=False,
+                                kernel_initializer=self.initializer
                             )
 
             alpha = tf.nn.softmax(tf.einsum('aij,akj->aik', atten_k, atten_q))
@@ -155,13 +157,18 @@ class NSPTGModel(BasicModel):
                             self.attention,
                             self.projection_dim,
                             activation=self.activation_fn,
-                            use_bias=False
+                            use_bias=False,
+                            kernel_initializer=self.initializer
                         )
 
             mask_t = tf.sequence_mask(self.labels_len, dtype=tf.int32)
             v = tf.dynamic_partition(logits, mask_t, 2)[1]
 
-            self.logits = tf.layers.dense(v, self.nlabels)
+            self.logits = tf.layers.dense(
+                                    v,
+                                    self.nlabels,
+                                    kernel_initializer=self.initializer
+                                )
             # compute softmax
             self.probs = tf.nn.softmax(self.logits, name='probs')
 
@@ -195,7 +202,7 @@ class NSPTGModel(BasicModel):
     def build_graph(self):
         with tf.Graph().as_default() as g:
             with tf.device('/gpu:{}'.format(self.gpu_id)):
-                with tf.variable_scope('slabel', initializer=self.initializer, dtype=self.dtype):
+                with tf.variable_scope('slabel', dtype=self.dtype):
                     self._add_placeholders()
                     self._add_char_lstm()
                     self._add_word_bidi_lstm()

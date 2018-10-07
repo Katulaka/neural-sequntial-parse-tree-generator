@@ -68,7 +68,11 @@ class BasicModel(object):
         raise NotImplementedError
 
     def embedding(self, input, shape, dropout, is_train, names):
-        embed_mat = tf.get_variable(shape=shape, name=names[0])
+        embed_mat = tf.get_variable(
+                                shape=shape,
+                                name=names[0],
+                                initializer=self.initializer
+                            )
         embeddings = tf.nn.embedding_lookup(embed_mat, input)
         return tf.layers.dropout(
                             embeddings,
