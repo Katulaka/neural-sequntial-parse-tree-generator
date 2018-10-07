@@ -125,11 +125,16 @@ class Parser(object):
 
     def parse(self, sentences, gold, mode, predict_parms=None):
         if mode == 'train':
-            loss, _ = self.model.step(
-                        batch=self.convert_batch(sentences, gold, is_train=True),
-                        output_feed=[self.model.loss, self.model.optimizer],
-                        is_train=True)
+            output_feed = [self.model.loss, self.model.optimizer]
+            batch = self.convert_batch(sentences, gold, is_train=True)
+            loss,  _ = self.model.step(
+                                batch=batch,
+                                output_feed=output_feed,
+                                is_train=True
+                            )
+
             return None, loss
+
         elif mode == 'dev':
             loss = self.model.step(
                         batch=self.convert_batch(sentences, gold, is_train=False),
