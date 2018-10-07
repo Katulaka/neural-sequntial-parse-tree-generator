@@ -30,7 +30,7 @@ class NSPTGModel(BasicModel):
             self.is_train = tf.placeholder(tf.bool, shape=(), name='is-train')
 
     def _add_char_lstm(self):
-        with tf.variable_scope('char-LSTM-Layer'):
+        with tf.variable_scope('char-LSTM-Layer', initializer=self.initializer):
 
             char_embed = self.embedding(
                                 self.chars_in,
@@ -52,32 +52,37 @@ class NSPTGModel(BasicModel):
 
     def _add_word_bidi_lstm(self):
         """ Bidirectional LSTM """
-        with tf.variable_scope('word-LSTM-Layer'):
+        with tf.variable_scope('word-LSTM-Layer', initializer=self.initializer):
             # Forward and Backward direction cell
             word_embed = self.embedding(
-                                    self.words_in,
-                                    [self.nwords, self.word_dim],
-                                    self.dropouts[1],
-                                    self.is_train,
-                                    names=['word-embed','word-embed-dropout'])
+                                self.words_in,
+                                [self.nwords, self.word_dim],
+                                self.dropouts[1],
+                                self.is_train,
+                                names=['word-embed','word-embed-dropout']
+                            )
 
             tag_embed = self.embedding(
-                                    self.tags_in,
-                                    [self.ntags, self.tag_dim],
-                                    self.dropouts[1],
+                                self.tags_in,
+                                [self.ntags, self.tag_dim],
+                                self.dropouts[1],
+                                self.is_train,
+                                names=['tag-embed','tag-embed-dropout']
+                            )
+
+            word_cell_fw = self._multi_cell(
+                                    self.h_word,
+                                    self.dropouts[0],
                                     self.is_train,
-                                    names=['tag-embed','tag-embed-dropout'])
+                                    self.n_layers
+                                )
 
-            word_cell_fw = self._multi_cell(self.h_word,
-                                            self.dropouts[0],
-                                            self.is_train,
-                                            self.n_layers)
-
-            word_cell_bw = self._multi_cell(self.h_word,
-                                            self.dropouts[0],
-                                            self.is_train,
-                                            self.n_layers)
-
+            word_cell_bw = self._multi_cell(
+                                    self.h_word,
+                                    self.dropouts[0],
+                                    self.is_train,
+                                    self.n_layers
+                                )
 
             char_out_shape = [tf.shape(tag_embed)[0], -1, self.h_char]
             char_out = tf.reshape(self.ch_state[1], char_out_shape)
@@ -99,7 +104,7 @@ class NSPTGModel(BasicModel):
 
     def _add_label_lstm_layer(self):
         """Generate sequences of tags"""
-        with tf.variable_scope('tag-LSTM-Layer'):
+        with tf.variable_scope('tag-LSTM-Layer', initializer=self.initializer):
             label_embed = self.embedding(
                                 self.labels_in,
                                 [self.nlabels, self.label_dim],
@@ -126,13 +131,12 @@ class NSPTGModel(BasicModel):
                                                 dtype=self.dtype)
 
     def _add_attention(self):
-        with tf.variable_scope('Attention'):
+        with tf.variable_scope('Attention', initializer=self.initializer):
             es_shape = tf.shape(self.encode_state)[0]
             k = tf.layers.dense(
                             self.decode_out,
                             self.attention_dim,
-                            use_bias=False,
-                            kernel_initializer=self.initializer
+                            use_bias=False
                         )
             atten_k = tf.reshape(k, [es_shape, -1, self.attention_dim])
 
@@ -140,8 +144,7 @@ class NSPTGModel(BasicModel):
                                 self.encode_state,
                                 self.attention_dim,
                                 activation=self.activation_fn,
-                                use_bias=False,
-                                kernel_initializer=self.initializer
+                                use_bias=False
                             )
 
             alpha = tf.nn.softmax(tf.einsum('aij,akj->aik', atten_k, atten_q))
@@ -151,24 +154,22 @@ class NSPTGModel(BasicModel):
             self.attention = tf.concat([self.decode_out, context], -1)
 
     def _add_projection(self):
-        with tf.variable_scope('probabilities'):
+        with tf.variable_scope('probabilities', initializer=self.initializer):
 
             logits = tf.layers.dense(
                             self.attention,
                             self.projection_dim,
                             activation=self.activation_fn,
-                            use_bias=False,
-                            kernel_initializer=self.initializer
+                            use_bias=False
                         )
 
             mask_t = tf.sequence_mask(self.labels_len, dtype=tf.int32)
-            v = tf.dynamic_partition(logits, mask_t, 2)[1]
+            logits_filtered = tf.dynamic_partition(logits, mask_t, 2)[1]
 
             self.logits = tf.layers.dense(
-                                    v,
-                                    self.nlabels,
-                                    kernel_initializer=self.initializer
-                                )
+                                logits_filtered,
+                                self.nlabels
+                            )
             # compute softmax
             self.probs = tf.nn.softmax(self.logits, name='probs')
 

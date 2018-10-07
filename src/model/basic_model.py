@@ -71,7 +71,8 @@ class BasicModel(object):
         embed_mat = tf.get_variable(
                                 shape=shape,
                                 name=names[0],
-                                initializer=self.initializer
+                                dtype=self.dtype,
+                                # initializer=self.initializer
                             )
         embeddings = tf.nn.embedding_lookup(embed_mat, input)
         return tf.layers.dropout(
