@@ -1,4 +1,5 @@
 import collections
+import tensorflow as tf
 import numpy as np
 
 import trees
@@ -32,6 +33,11 @@ class Parser(object):
         self.word_vocab = word_vocab
         self.char_vocab = char_vocab
         self.label_vocab = label_vocab
+
+        writer_dir = self.model.model_path_base + '/logs'
+        graph = self.model.sess.graph
+        self.train_writer = tf.summary.FileWriter(writer_dir + '/train', graph)
+        self.dev_writer = tf.summary.FileWriter(writer_dir +  '/dev', graph)
 
     def convert_one_sentence(self, sentence, gold, is_train):
 
@@ -173,3 +179,12 @@ class Parser(object):
             tree = trees.InternalMyParseNode('S', children)
 
             return tree, None
+
+    def log(self, value, is_train):
+
+        writer = self.train_writer if is_train else self.dev_writer
+        loss = tf.Summary()
+        global_step = self.model.sess.run(self.model.global_step)
+        loss.value.add(tag="loss", simple_value=value)
+        writer.add_summary(loss, global_step)
+        writer.flush()

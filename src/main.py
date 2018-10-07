@@ -191,6 +191,7 @@ def run_train(args):
 
         dev_loss = np.mean(total_losses)
 
+        parser.log(value=dev_loss, is_train=False)
 
         print(
             "dev-loss {} "
@@ -233,6 +234,7 @@ def run_train(args):
                                             mode='train'
                                          )
 
+            parser.log(value=batch_loss_value, is_train=True)
 
             total_processed += len(parse_trees)
             current_processed += len(parse_trees)

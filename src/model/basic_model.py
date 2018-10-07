@@ -36,7 +36,6 @@ class BasicModel(object):
         self.sess = tf.Session(config=self.sess_config, graph=self.graph)
 
         self.init()
-        # self.sw = tf.summary.FileWriter(self.sw_dir, self.graph)
 
         # @staticmethod
         # def number_of_parms():
