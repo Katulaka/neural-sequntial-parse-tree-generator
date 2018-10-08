@@ -268,7 +268,7 @@ def run_test(args):
     test_predicted = []
     missed_indices = []
     predict_parms = {'astar_parms': args.astar_parms, 'beam_parms':args.beam_size}
-    for i, tree in  enumerate(test_treebank[0]):
+    for i, tree in  enumerate(test_treebank[0:3]):
         sentence = [(leaf.tag, leaf.word) for leaf in tree.leaves()]
         prediction_start_time = time.time()
         predicted = parser.parse(sentence, predict_parms=predict_parms)
