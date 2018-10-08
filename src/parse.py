@@ -143,8 +143,8 @@ class Parser(object):
         bv_tags = BatchVector(input=np.vstack(tags), length=np.array(tags_len))
         bv_words = BatchVector(input=np.vstack(words), length=np.array(words_len))
         bv_chars = BatchVector(input=np.vstack(chars), length=chars_len)
-        bv_labels = None if is_test else BatchVector(input=np.vstack(labels), length=labels_len)
-        bv_targets = None if is_test else np.array(list(flatten(targets)))
+        bv_labels = BatchVector(input=np.vstack(labels), length=labels_len)
+        bv_targets = np.array(list(flatten(targets)))
 
         Batch = collections.namedtuple('Batch', 'tags words chars labels targets')
         return Batch(
