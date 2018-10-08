@@ -330,7 +330,7 @@ def main():
     subparser.add_argument("--gpu-id", type=int, default=0)
     subparser.add_argument("--evalb-dir", default="EVALB/")
     subparser.add_argument("--astar-parms", type=float, nargs=4, default=[1, 60., 1, 0.2])
-    subparser.add_argument("--beam-size", type=int, default=5)
+    subparser.add_argument("--beam-size", type=int, nargs=+, default=[5])
 
     args = parser.parse_args()
     args.callback(args)
