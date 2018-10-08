@@ -173,7 +173,7 @@ def run_train(args):
             gold = [[tuple(leaf.labels) for leaf in tree.leaves()]
                                 for tree in parse_trees]
 
-            _, batch_loss = parser.parse(sentences, gold, mode='dev')
+            batch_loss = parser.parse(sentences, gold, mode='dev')
             total_losses.append(batch_loss)
 
             print(
@@ -228,11 +228,7 @@ def run_train(args):
             gold = [[tuple(leaf.labels) for leaf in tree.leaves()]
                                 for tree in parse_trees]
 
-            _, batch_loss_value = parser.parse(
-                                            sentences,
-                                            gold,
-                                            mode='train'
-                                         )
+            batch_loss_value = parser.parse(sentences, gold, mode='train')
 
             parser.log(value=batch_loss_value, is_train=True)
 

@@ -139,14 +139,14 @@ class Parser(object):
                                 is_train=True
                             )
 
-            return None, loss
+            return loss
 
         elif mode == 'dev':
             loss = self.model.step(
                         batch=self.convert_batch(sentences, gold, is_train=False),
                         output_feed=self.model.loss,
                         is_train=False)
-            return None, loss
+            return loss
         else:
             start = self.label_vocab.index(START)
             stop = self.label_vocab.index(STOP)
