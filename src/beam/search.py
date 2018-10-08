@@ -152,4 +152,5 @@ class BeamSearch(object):
         Returns:
           hyps: A sub list of top <beam_size> hyps.
         """
+        import pdb; pdb.set_trace()
         return sorted(hyps, key=lambda h: h.score, reverse=True)[:self._beam_size]
