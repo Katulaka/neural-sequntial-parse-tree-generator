@@ -43,11 +43,12 @@ class Parser(object):
         self.char_vocab = char_vocab
         self.label_vocab = label_vocab
 
-    def __call__(self, model_config):
+    def __call__(self, model_update):
+        import pdb; pdb.set_trace()
         # self.config['mode'] = mode
         # self.config['gpu_id'] = gpu_id
-
-        self.model = NSPTGModel(self.config.update(model_config))
+        self.config = self.config.update(model_update)
+        self.model = NSPTGModel(self.config)
 
         writer_dir = self.model.model_path_base + '/logs'
         graph = self.model.sess.graph

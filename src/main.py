@@ -117,25 +117,6 @@ def run_train(args):
 
     print("Initializing model...")
 
-    # config = {}
-    # config['mode'] = args.mode
-    # config['model_path_base'] = args.model_path_base
-    # config_path = os.path.join(args.model_path_base, 'config.pkl')
-    # if os.path.exists(config_path):
-    #     with open(config_path, 'rb') as f:
-    #         config.update(pickle.load(f))
-    # else:
-    #   os.makedirs(args.model_path_base)
-    #    config.update({'ntags' : tag_vocab.size,
-    #                 'nwords' : word_vocab.size,
-    #                 'nchars': char_vocab.size,
-    #                 'nlabels': label_vocab.size})
-    #   config.update({k.split("nn_")[-1] : v
-    #                     for k,v in vars(args).items()
-    #                             if k.startswith("nn_")}
-    #             )
-    #   with open(config_path, 'wb') as f:
-    #       pickle.dump(config, f, pickle.HIGHEST_PROTOCOL)
     parser_path = os.path.join(args.model_path_base, 'parser.pkl')
     if os.path.exists(parser_path):
          with open(parser_path, 'rb') as f:
@@ -152,8 +133,7 @@ def run_train(args):
         with open(parser_path, 'wb') as f:
             pickle.dump(parser, f, pickle.HIGHEST_PROTOCOL)
 
-    import pdb; pdb.set_trace()
-    parser = parser({'mode' : args.mode, 'gpu_id' : args.gpu_id})
+    parser = parser({'mode': args.mode, 'gpu_id': args.gpu_id})
 
     total_processed = 0
     current_processed = 0
