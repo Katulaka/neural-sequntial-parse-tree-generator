@@ -44,12 +44,9 @@ class Parser(object):
         self.label_vocab = label_vocab
 
     def __call__(self, model_update):
-        import pdb; pdb.set_trace()
-        # self.config['mode'] = mode
-        # self.config['gpu_id'] = gpu_id
-        self.config = self.config.update(model_update)
-        self.model = NSPTGModel(self.config)
 
+        self.config.update(model_update)
+        self.model = NSPTGModel(self.config)
         writer_dir = self.model.model_path_base + '/logs'
         graph = self.model.sess.graph
         self.train_writer = tf.summary.FileWriter(writer_dir + '/train', graph)
