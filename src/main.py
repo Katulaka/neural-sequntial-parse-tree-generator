@@ -264,11 +264,10 @@ def run_test(args):
     print("Loading model from {}...".format(args.model_path_base))
 
     config_path = os.path.join(args.model_path_base, 'config.pkl')
-    # if os.path.exists(config_path, 'rb'):
-    try:
+    if os.path.exists(config_path, 'rb'):
         with open(config_path) as f:
             config = pickle.load(f)
-    except:
+    else:
         print("Didn't find {}".format(config_path))
 
     config['mode'] = args.mode
@@ -314,7 +313,6 @@ def run_test(args):
             format_elapsed(start_time),
         )
     )
-
 
 
 def main():
