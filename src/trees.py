@@ -202,7 +202,7 @@ class LeafMyParseNode(MyParseNode):
 
     def deserialize(self, labels):
         # invalid labels: when using tag as first symbol
-        if (labels[0] != self.tag) or (len(labels) == 1):
+        if len(labels) == 1:
             return None
         else:
             labels = labels[1:]
