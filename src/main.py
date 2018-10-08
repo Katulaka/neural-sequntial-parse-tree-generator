@@ -163,7 +163,7 @@ def run_train(args):
             gold = [[tuple(leaf.labels) for leaf in tree.leaves()]
                                 for tree in parse_trees]
 
-            batch_loss = parser.parse(sentences, gold, mode='dev')
+            batch_loss = parser.step(sentences, gold, is_train=False)
             total_losses.append(batch_loss)
 
             print(
@@ -218,7 +218,7 @@ def run_train(args):
             gold = [[tuple(leaf.labels) for leaf in tree.leaves()]
                                 for tree in parse_trees]
 
-            batch_loss_value = parser.parse(sentences, gold, mode='train')
+            batch_loss_value = parser.step(sentences, gold, is_train=True)
 
             parser.log(value=batch_loss_value, is_train=True)
 
@@ -270,7 +270,7 @@ def run_test(args):
     for i, tree in  enumerate(test_treebank):
         sentence = [(leaf.tag, leaf.word) for leaf in tree.leaves()]
         prediction_start_time = time.time()
-        predicted = parser.parse(sentence, None, mode='test', predict_parms=predict_parms)
+        predicted = parser.parse(sentence, predict_parms=predict_parms)
         print(
             "processed {:,}/{:,} "
             "prediction-elapsed {} "

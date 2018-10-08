@@ -155,53 +155,54 @@ class Parser(object):
                 targets= bv_targets
                 )
 
-    def parse(self, sentences, gold, mode, predict_parms=None):
-        if mode == 'train':
+
+    def step(self, sentences, gold, is_train):
+
+        batch = self.convert_batch(sentences, gold, is_train=is_train)
+        if is_train:
             output_feed = [self.model.loss, self.model.optimizer]
-            batch = self.convert_batch(sentences, gold, is_train=True)
             loss,  _ = self.model.step(
                                 batch=batch,
                                 output_feed=output_feed,
                                 is_train=True
                             )
-
-            return loss
-
-        elif mode == 'dev':
+        else:
             loss = self.model.step(
-                        batch=self.convert_batch(sentences, gold, is_train=False),
+                        batch=batch,
                         output_feed=self.model.loss,
                         is_train=False)
-            return loss
-        else:
-            start = self.label_vocab.index(START)
-            stop = self.label_vocab.index(STOP)
-            astar_parms = predict_parms['astar_parms']
-            enc_bv = self.convert_batch_test(sentences)
-            enc_state = self.model.encode_top_state(enc_bv)
-            enc_state = np.squeeze(enc_state)[1:enc_bv.words.length[0] - 1]
-            for beam_size in predict_parms['beam_parms']:
-                hyps = BeamSearch(start, stop, beam_size).beam_search(
-                                                    enc_state,
-                                                    self.model.decode_topk,
-                                                    )
+        return loss
 
-                grid = []
-                for i, (leaf_hyps, leaf) in enumerate(zip(hyps, sentences)):
-                    row = []
-                    for hyp in leaf_hyps:
-                        labels = np.array(self.label_vocab.values)[hyp[0]].tolist()
-                        partial_tree = trees.LeafMyParseNode(i, *leaf).deserialize(labels)
-                        if partial_tree is not None:
-                            row.append((partial_tree, hyp[1]))
-                    grid.append(row)
+    def parse(self, sentence, predict_parms=None):
+
+        start = self.label_vocab.index(START)
+        stop = self.label_vocab.index(STOP)
+        astar_parms = predict_parms['astar_parms']
+        enc_bv = self.convert_batch_test(sentence)
+        enc_state = self.model.encode_top_state(enc_bv)
+        enc_state = np.squeeze(enc_state)[1:enc_bv.words.length[0] - 1]
+        for beam_size in predict_parms['beam_parms']:
+            hyps = BeamSearch(start, stop, beam_size).beam_search(
+                                                enc_state,
+                                                self.model.decode_topk,
+                                                )
+
+            grid = []
+            for i, (leaf_hyps, leaf) in enumerate(zip(hyps, sentence)):
+                row = []
+                for hyp in leaf_hyps:
+                    labels = np.array(self.label_vocab.values)[hyp[0]].tolist()
+                    partial_tree = trees.LeafMyParseNode(i, *leaf).deserialize(labels)
+                    if partial_tree is not None:
+                        row.append((partial_tree, hyp[1]))
+                grid.append(row)
 
 
-                nodes = astar_search(grid, self.keep_valence_value, astar_parms)
-                if nodes is not None:
-                    return nodes
-            children = [trees.LeafMyParseNode(i, *leaf) for i,leaf in enumerate(sentences)]
-            return trees.InternalMyParseNode('S', children)
+            nodes = astar_search(grid, self.keep_valence_value, astar_parms)
+            if nodes is not None:
+                return nodes
+        children = [trees.LeafMyParseNode(i, *leaf) for i,leaf in enumerate(sentence)]
+        return trees.InternalMyParseNode('S', children)
 
     def log(self, value, is_train):
 
