@@ -166,5 +166,5 @@ def astar_search(beams, keep_valence_value, astar_parms, verbose=1):
     nodes = Solver(beams, keep_valence_value).astar(start, goal, *astar_parms, verbose)
 
     if nodes == []:
-         return trees.LeafMyParseNode(0, '', '')
+         return None
     return nodes[0].trees[0]
