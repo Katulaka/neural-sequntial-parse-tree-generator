@@ -93,8 +93,11 @@ class BeamSearch(object):
             dec_in_state = tf.contrib.rnn.LSTMStateTuple(c_cell, h_cell)
             complete_hyps = []
             hyps = [Hypothesis([self._start_token], [1.0], dec_in_state)]
-            import pdb; pdb.set_trace()
-            _, _, new_state = decode_topk([self._start_token, tag], dec_in_state, [enc_state], 1)
+            _, _, new_state = decode_topk(
+                                [[self._start_token, tag]],
+                                dec_in_state,
+                                [enc_state],
+                                1)
             for steps in xrange(self._max_steps):
                 if hyps != []:
                     # Extend each hypothesis.

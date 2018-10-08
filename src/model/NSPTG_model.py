@@ -249,11 +249,12 @@ class NSPTGModel(BasicModel):
     def decode_topk(self, latest_tokens, dec_init_states, enc_state, k):
         """Return the topK results and new decoder states."""
         input_feed = {
-            self.label_init : dec_init_states,
             self.labels_in: np.array(latest_tokens),
+            self.label_init : dec_init_states,
             self.encode_state : enc_state,
             self.labels_len: np.ones(len(latest_tokens), np.int32),
             self.is_train : False}
+        import pdb; pdb.set_trace()
         output_feed = [self.decode_state, self.probs]
         states, probs = self.sess.run(output_feed, input_feed)
         topk_ids = np.array([np.argsort(np.squeeze(p))[-k:] for p in probs])
