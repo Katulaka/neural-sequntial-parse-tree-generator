@@ -72,9 +72,9 @@ class Parser(object):
         words = (START,) + words + (STOP,)
         words = tuple(self.word_vocab.index(word) for word in words)
 
+        import pdb; pdb.set_trace()
         tags = (START,) + tags + (STOP,)
         tags = tuple(self.tag_vocab.index(tag) for tag in tags)
-        import pdb; pdb.set_trace()
 
         if gold is not None:
             labels = tuple(tuple(self.label_vocab.index(l) for l in (START,) + label)
