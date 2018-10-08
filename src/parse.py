@@ -179,6 +179,7 @@ class Parser(object):
             enc_bv = self.convert_batch_test(sentences)
 
             enc_state = self.model.encode_top_state(enc_bv)[1:enc_bv.words.length - 1]
+            import pdb; pdb.set_trace()
             for beam_size in predict_parms['beam_parms']:
                 hyps = BeamSearch(start, stop, beam_size).beam_search(
                                                     enc_state,
