@@ -43,7 +43,7 @@ class Parser(object):
         self.char_vocab = char_vocab
         self.label_vocab = label_vocab
 
-    def __call__(self, **kwargs):
+    def __call__(self, kwargs):
         # self.config['mode'] = mode
         # self.config['gpu_id'] = gpu_id
         self.config.update(kwargs)
