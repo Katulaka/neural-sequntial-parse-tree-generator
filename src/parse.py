@@ -177,9 +177,8 @@ class Parser(object):
             stop = self.label_vocab.index(STOP)
             astar_parms = predict_parms['astar_parms']
             enc_bv = self.convert_batch_test(sentences)
-
-            import pdb; pdb.set_trace()
-            enc_state = self.model.encode_top_state(enc_bv)[1:enc_bv.words.length - 1]
+            enc_state = self.model.encode_top_state(enc_bv)
+            enc_state = np.squeeze(enc_state)[1:enc_bv.words.length[0] - 1]
             for beam_size in predict_parms['beam_parms']:
                 hyps = BeamSearch(start, stop, beam_size).beam_search(
                                                     enc_state,
