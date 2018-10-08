@@ -72,7 +72,6 @@ class Parser(object):
         words = (START,) + words + (STOP,)
         words = tuple(self.word_vocab.index(word) for word in words)
 
-        import pdb; pdb.set_trace()
         tags = (START,) + tags + (STOP,)
         tags = tuple(self.tag_vocab.index(tag) for tag in tags)
 
@@ -89,7 +88,6 @@ class Parser(object):
 
 
     def convert_batch(self, sentences, gold, is_train):
-        is_test = gold is None
 
         def seq_len(sequences):
             return tuple([len(sequence) for sequence in sequences])
@@ -97,18 +95,11 @@ class Parser(object):
         def pad(sequence, pad, max_len):
             return sequence + (pad,)*(max_len-len(sequence))
 
-        if is_test:
-            batch = [self.convert_one_sentence(sentence, None, is_train)
-                        for sentence in sentences]
-            batch_len = [(len(t), len(w), seq_len(c)) for t,w,c,in batch]
-            tags_len, words_len, chars_len = zip(*batch_len)
-            tags, words, chars = zip(*batch)
-        else:
-            batch = [self.convert_one_sentence(sentence, g, is_train)
-                            for sentence, g in zip(sentences, gold)]
-            batch_len = [(len(t), len(w), seq_len(c), seq_len(l)) for t,w,c,l,_ in batch]
-            tags_len, words_len, chars_len, labels_len = zip(*batch_len)
-            tags, words, chars, labels, targets = zip(*batch)
+        batch = [self.convert_one_sentence(sentence, g, is_train)
+                        for sentence, g in zip(sentences, gold)]
+        batch_len = [(len(t), len(w), seq_len(c), seq_len(l)) for t,w,c,l,_ in batch]
+        tags_len, words_len, chars_len, labels_len = zip(*batch_len)
+        tags, words, chars, labels, targets = zip(*batch)
 
         max_len = max(words_len)
 
@@ -121,13 +112,12 @@ class Parser(object):
         chars = [pad(char, (CHAR_PAD,), max_len) for char in chars]
         chars = [pad(c, CHAR_PAD, max_chars_len) for char in chars for c in char]
 
-        if not is_test:
-            labels_len = [pad((0,) + l, 0, max_len) for l in labels_len]
-            labels_len = np.reshape(labels_len, [-1])
-            max_labels_len = max(labels_len)
-            LABEL_PAD = self.label_vocab.index(PAD)
-            labels = [pad(((LABEL_PAD,),) + label, (LABEL_PAD,), max_len) for label in labels]
-            labels = [pad(l, LABEL_PAD, max_labels_len) for label in labels for l in label ]
+        labels_len = [pad((0,) + l, 0, max_len) for l in labels_len]
+        labels_len = np.reshape(labels_len, [-1])
+        max_labels_len = max(labels_len)
+        LABEL_PAD = self.label_vocab.index(PAD)
+        labels = [pad(((LABEL_PAD,),) + label, (LABEL_PAD,), max_len) for label in labels]
+        labels = [pad(l, LABEL_PAD, max_labels_len) for label in labels for l in label ]
 
         BatchVector = collections.namedtuple('BatchVector', 'input length')
         bv_tags = BatchVector(input=np.vstack(tags), length=np.array(tags_len))
@@ -167,7 +157,14 @@ class Parser(object):
             start = self.label_vocab.index(START)
             stop = self.label_vocab.index(STOP)
             astar_parms = predict_parms['astar_parms']
-            enc_bv = self.convert_batch(sentences, gold, is_train=False)
+            # enc_bv = self.convert_batch(sentences, gold, is_train=False)
+            batch = self.convert_one_sentence(sentences, None, is_train=False)
+            import pdb; pdb.set_trace()
+            batch_len = [(len(t), len(w), seq_len(c)) for t,w,c,in batch]
+            tags_len, words_len, chars_len = zip(*batch_len)
+            tags, words, chars = zip(*batch)
+
+
             enc_state = self.model.encode_top_state(enc_bv)[1:enc_bv.words.length - 1]
             for beam_size in predict_parms['beam_parms']:
                 hyps = BeamSearch(start, stop, beam_size).beam_search(
