@@ -88,15 +88,14 @@ class Parser(object):
 
     def convert_batch_test(self, sentence):
 
-        import pdb; pdb.set_trace()
         enc_sentence = self.convert_one_sentence(sentence, None, is_train=False)
-        tags, words, chars = zip(*enc_sentence)
-        words_len = [len(words)]
-        tags_len = [len(tags)]
-        chars_len = [len(char) for char in chars]
+        tags, words, chars = zip(*[enc_sentence])
+        words_len = [len(words[-1])]
+        tags_len = [len(tags[-1])]
+        chars_len = [len(char) for char in chars[-1]]
         max_chars_len = max(chars_len)
         CHAR_PAD = self.char_vocab.index(PAD)
-        chars = [char + (CHAR_PAD,)*(max_len-len(char)) for char in chars]
+        chars = [char + (CHAR_PAD,)*(max_chars_len-len(char)) for char in chars[-1]]
 
         BatchVector = collections.namedtuple('BatchVector', 'input length')
         bv_tags = BatchVector(input=np.vstack(tags), length=np.array(tags_len))
