@@ -147,6 +147,7 @@ def run_train(args):
             char_vocab,
             label_vocab,
             )
+    import pdb; pdb.set_trace()
 
     total_processed = 0
     current_processed = 0
