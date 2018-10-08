@@ -182,10 +182,9 @@ class Parser(object):
         enc_state = self.model.encode_top_state(enc_bv)
         enc_state = np.squeeze(enc_state)[1:enc_bv.words.length[0] - 1]
         for beam_size in predict_parms['beam_parms']:
-            hyps = BeamSearch(start, stop, beam_size).beam_search(
-                                                enc_state,
-                                                self.model.decode_topk,
-                                                )
+            tags = [self.label_vocab.index(tag) for tag, _ in sentence]
+            bs = BeamSearch(start, stop, beam_size)
+            hyp = bs.beam_search(enc_state, self.model.decode_topk, tags)
 
             grid = []
             for i, (leaf_hyps, leaf) in enumerate(zip(hyps, sentence)):

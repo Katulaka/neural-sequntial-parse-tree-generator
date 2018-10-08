@@ -70,7 +70,7 @@ class BeamSearch(object):
         self._end_token = end_token
         self._max_steps = max_steps
 
-    def beam_search(self, enc_state, decode_topk):
+    def beam_search(self, enc_state, decode_topk, tags):
         """Performs beam search for decoding.
 
          Args:
@@ -87,12 +87,14 @@ class BeamSearch(object):
 
         hyps_per_sentence = []
         #iterate over words in seq
-        for dec_in in enc_state:
+        for dec_in, tag in zip(enc_state, tags):
             c_cell = np.expand_dims(dec_in, axis=0)
             h_cell = np.expand_dims(np.zeros_like(dec_in), axis=0)
-            dec_in_state = tf.contrib.rnn.LSTMStateTuple(c_cell,h_cell)
+            dec_in_state = tf.contrib.rnn.LSTMStateTuple(c_cell, h_cell)
             complete_hyps = []
             hyps = [Hypothesis([self._start_token], [1.0], dec_in_state)]
+            import pdb; pdb.set_trace()
+            _, _, new_state = decode_topk([self._start_token, tag], dec_in_state, [enc_state], 1)
             for steps in xrange(self._max_steps):
                 if hyps != []:
                     # Extend each hypothesis.
