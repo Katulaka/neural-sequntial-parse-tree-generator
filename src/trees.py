@@ -206,6 +206,7 @@ class LeafMyParseNode(MyParseNode):
             return None
         index = self.left
         children = [self]
+        import pdb; pdb.set_trace()
         while labels:
             p_label = labels[0]
             labels = labels[1:]
