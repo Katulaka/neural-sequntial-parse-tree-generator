@@ -268,7 +268,7 @@ def run_test(args):
     test_predicted = []
     missed_indices = []
     predict_parms = {'astar_parms': args.astar_parms, 'beam_parms':args.beam_size}
-    for i, tree in  enumerate(test_treebank[0:3]):
+    for i, tree in  enumerate(test_treebank):
         sentence = [(leaf.tag, leaf.word) for leaf in tree.leaves()]
         prediction_start_time = time.time()
         predicted = parser.parse(sentence, predict_parms=predict_parms)
@@ -287,7 +287,6 @@ def run_test(args):
             )
         )
         test_predicted.append(predicted.convert())
-    import pdb; pdb.set_trace()
     test_fscore = evaluate.evalb(args.evalb_dir, test_treebank, test_predicted)
 
     print(
