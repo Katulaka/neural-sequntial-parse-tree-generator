@@ -198,7 +198,7 @@ class Parser(object):
 
 
                 nodes = astar_search(grid, self.keep_valence_value, astar_parms)
-
+                import pdb; pdb.set_trace()
                 if nodes != []:
                     return nodes[0].trees[0], None
 
