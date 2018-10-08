@@ -72,7 +72,7 @@ class BeamSearch(object):
         self._end_token = end_token
         self._max_steps = max_steps
 
-    def beam_search(self, enc_state, decode_topk, tags):
+    def beam_search(self, enc_state, decode_topk, tags=None):
         """Performs beam search for decoding.
 
          Args:
@@ -86,20 +86,22 @@ class BeamSearch(object):
             hyps: list of Hypothesis, the best hypotheses found by beam search,
                     ordered by score
          """
-
+        is_use_tags = tags is not None
+        min_len, s_idx = (3, 2) if is_use_tags else (2, 1)
         hyps_per_sentence = []
         #iterate over words in seq
-        for dec_in, tag in zip(enc_state, tags):
+        for i, dec_in in enumerate(enc_state):
             c_cell = np.expand_dims(dec_in, axis=0)
             h_cell = np.expand_dims(np.zeros_like(dec_in), axis=0)
             dec_in_state = tf.contrib.rnn.LSTMStateTuple(c_cell, h_cell)
             complete_hyps = []
             hyps = [Hypothesis([self._start_token], [1.0], dec_in_state)]
-            _, _, new_state = decode_topk(
-                                latest_tokens = [[self._start_token]],
-                                init_states = dec_in_state,
-                                enc_state = [enc_state])
-            hyps = [hyps[0].extend_(tag, 1.0, new_state)]
+            if is_use_tags:
+                _, _, new_state = decode_topk(
+                                    latest_tokens = [[self._start_token]],
+                                    init_states = dec_in_state,
+                                    enc_state = [enc_state])
+                hyps = [hyps[0].extend_(tags[i], 1.0, new_state)]
             for steps in xrange(self._max_steps):
                 if hyps != []:
                     # Extend each hypothesis.
@@ -129,7 +131,7 @@ class BeamSearch(object):
 
                     for h in self.best_hyps(all_hyps):
                         # Filter and collect any hypotheses that have the end token.
-                        if h.latest_token == self._end_token and len(h.tokens)>2:
+                        if h.latest_token == self._end_token and len(h.tokens)>min_len:
                             # Pull the hypothesis off the beam
                             #if the end token is reached.
                             complete_hyps.append(h)
@@ -142,11 +144,7 @@ class BeamSearch(object):
                             # Otherwise continue to the extend the hypothesis.
                             hyps.append(h)
             hyps_per_word = self.best_hyps(complete_hyps)
-            for h in hyps_per_word:
-                if len(h.tokens[2:-1])<4:
-                    import pdb; pdb.set_trace()       
-            hyps_per_sentence.append([(h.tokens[2:-1], h.score) for h in hyps_per_word
-                                        if len(h.tokens[2:-1])>3])
+            hyps_per_sentence.append([(h.tokens[s_idx:-1], h.score) for h in hyps_per_word])
 
         return hyps_per_sentence
 
