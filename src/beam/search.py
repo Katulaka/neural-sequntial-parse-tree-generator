@@ -26,7 +26,7 @@ class Hypothesis(object):
         self.tokens = tokens
         self.prob = prob
         self.state = state
-        self.score = -math.log(prob[-1]) if score is None else score
+        self.score = math.log(prob[-1]) if score is None else score
 
     def extend_(self, token, prob, new_state):
         """Extend the hypothesis with result from latest step.
@@ -40,7 +40,7 @@ class Hypothesis(object):
         """
         tokens = self.tokens + [token]
         probs = self.prob + [prob]
-        score = self.score - math.log(prob)
+        score = self.score + math.log(prob)
         return Hypothesis(tokens, probs, new_state, score)
 
     @property
@@ -140,6 +140,7 @@ class BeamSearch(object):
                             # Otherwise continue to the extend the hypothesis.
                             hyps.append(h)
             hyps_per_word = self.best_hyps(complete_hyps)
+            import pdb; pdb.set_trace()
             hyps_per_sentence.append([(h.tokens[2:-1], h.score) for h in hyps_per_word])
 
         return hyps_per_sentence
