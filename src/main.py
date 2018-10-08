@@ -71,57 +71,55 @@ def run_train(args):
     dev_parse = [tree.convert(dep)(args.keep_valence_value)
                         for tree, dep in zip(dev_treebank, dependancies)]
 
-    print("Constructing vocabularies...")
-
-    tag_vocab = vocabulary.Vocabulary()
-    tag_vocab.index(parse.PAD)
-    tag_vocab.index(parse.START)
-    tag_vocab.index(parse.STOP)
-
-    word_vocab = vocabulary.Vocabulary()
-    word_vocab.index(parse.PAD)
-    word_vocab.index(parse.START)
-    word_vocab.index(parse.STOP)
-    word_vocab.index(parse.UNK)
-
-    char_vocab = vocabulary.Vocabulary()
-    char_vocab.index(parse.PAD)
-    char_vocab.index(parse.START)
-    char_vocab.index(parse.STOP)
-    for c in parse.START+parse.STOP+parse.UNK:
-        char_vocab.index(c)
-
-    label_vocab = vocabulary.Vocabulary()
-    label_vocab.index(parse.PAD)
-    label_vocab.index(parse.START)
-    label_vocab.index(parse.STOP)
-
-    for tree in train_parse:
-        nodes = [tree]
-        while nodes:
-            node = nodes.pop()
-            if isinstance(node, trees.InternalMyParseNode):
-                nodes.extend(reversed(node.children))
-            else:
-                for l in node.labels:
-                    label_vocab.index(l)
-                for c in node.word:
-                    char_vocab.index(c)
-                tag_vocab.index(node.tag)
-                word_vocab.index(node.word)
-
-    tag_vocab.freeze()
-    word_vocab.freeze()
-    char_vocab.freeze()
-    label_vocab.freeze()
-
     print("Initializing model...")
 
     parser_path = os.path.join(args.model_path_base, 'parser.pkl')
-    if os.path.exists(parser_path):
-         with open(parser_path, 'rb') as f:
-             parser = pickle.load(f)
-    else:
+    if not os.path.exists(parser_path):
+
+        print("Constructing vocabularies...")
+
+        tag_vocab = vocabulary.Vocabulary()
+        tag_vocab.index(parse.PAD)
+        tag_vocab.index(parse.START)
+        tag_vocab.index(parse.STOP)
+
+        word_vocab = vocabulary.Vocabulary()
+        word_vocab.index(parse.PAD)
+        word_vocab.index(parse.START)
+        word_vocab.index(parse.STOP)
+        word_vocab.index(parse.UNK)
+
+        char_vocab = vocabulary.Vocabulary()
+        char_vocab.index(parse.PAD)
+        char_vocab.index(parse.START)
+        char_vocab.index(parse.STOP)
+        for c in parse.START+parse.STOP+parse.UNK:
+            char_vocab.index(c)
+
+        label_vocab = vocabulary.Vocabulary()
+        label_vocab.index(parse.PAD)
+        label_vocab.index(parse.START)
+        label_vocab.index(parse.STOP)
+
+        for tree in train_parse:
+            nodes = [tree]
+            while nodes:
+                node = nodes.pop()
+                if isinstance(node, trees.InternalMyParseNode):
+                    nodes.extend(reversed(node.children))
+                else:
+                    for l in node.labels:
+                        label_vocab.index(l)
+                    for c in node.word:
+                        char_vocab.index(c)
+                    tag_vocab.index(node.tag)
+                    word_vocab.index(node.word)
+
+        tag_vocab.freeze()
+        word_vocab.freeze()
+        char_vocab.freeze()
+        label_vocab.freeze()
+
         # os.makedirs(args.model_path_base)
         parser = parse.Parser(
                     args,
@@ -132,6 +130,11 @@ def run_train(args):
                 )
         with open(parser_path, 'wb') as f:
             pickle.dump(parser, f, pickle.HIGHEST_PROTOCOL)
+
+    else:
+
+        with open(parser_path, 'rb') as f:
+            parser = pickle.load(f)
 
     parser = parser({'mode': args.mode, 'gpu_id': args.gpu_id})
 
@@ -254,26 +257,9 @@ def run_test(args):
     if os.path.exists(parser_path):
         with open(parser_path, 'rb') as f:
             parser = pickle.load(f)
-            parser = parser(args.mode)
+        parser = parser({'mode': args.mode, 'gpu_id': args.gpu_id})
     else:
         print("Couldn't load {}".format(parser_path))
-    # config_path = os.path.join(args.model_path_base, 'config.pkl')
-    # if os.path.exists(config_path):
-    #     with open(config_path, 'rb') as f:
-    #         config = pickle.load(f)
-
-    # config['model_path_base'] = args.model_path_base
-    # config['mode'] = args.mode
-    #
-    # model = NSPTGModel(config)
-    #
-    # parser = parse.Parser(
-    #             model,
-    #             tag_vocab,
-    #             word_vocab,
-    #             char_vocab,
-    #             label_vocab,
-    #             )
 
     print("Parsing test sentences...")
 
