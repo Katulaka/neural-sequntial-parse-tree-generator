@@ -140,7 +140,6 @@ class BeamSearch(object):
                             # Otherwise continue to the extend the hypothesis.
                             hyps.append(h)
             hyps_per_word = self.best_hyps(complete_hyps)
-            import pdb; pdb.set_trace()
             hyps_per_sentence.append([(h.tokens[2:-1], h.score) for h in hyps_per_word])
 
         return hyps_per_sentence
