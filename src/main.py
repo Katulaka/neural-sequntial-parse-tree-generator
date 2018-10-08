@@ -270,7 +270,7 @@ def run_test(args):
     for i, tree in  enumerate(test_treebank):
         sentence = [(leaf.tag, leaf.word) for leaf in tree.leaves()]
         prediction_start_time = time.time()
-        predicted, _ = parser.parse(sentence, None, mode='test', predict_parms=predict_parms)
+        predicted = parser.parse(sentence, None, mode='test', predict_parms=predict_parms)
         print(
             "processed {:,}/{:,} "
             "prediction-elapsed {} "
