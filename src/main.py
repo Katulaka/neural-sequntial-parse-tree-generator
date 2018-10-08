@@ -345,6 +345,7 @@ def main():
 
     subparser = subparsers.add_parser("test")
     subparser.set_defaults(callback=run_test, mode='test')
+    subparser.add_argument("--test-path", default="data/23-23.clean")
     subparser.add_argument("--model-path-base", required=True)
     subparser.add_argument("--evalb-dir", default="EVALB/")
     subparser.add_argument("--astar-parms", type=float, nargs=4, default=[1, 60., 1, 0.2])
