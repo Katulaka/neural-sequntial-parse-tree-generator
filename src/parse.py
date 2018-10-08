@@ -184,7 +184,7 @@ class Parser(object):
         for beam_size in predict_parms['beam_parms']:
             tags = [self.label_vocab.index(tag) for tag, _ in sentence]
             bs = BeamSearch(start, stop, beam_size)
-            hyp = bs.beam_search(enc_state, self.model.decode_topk, tags)
+            hyps = bs.beam_search(enc_state, self.model.decode_topk, tags)
 
             grid = []
             for i, (leaf_hyps, leaf) in enumerate(zip(hyps, sentence)):
