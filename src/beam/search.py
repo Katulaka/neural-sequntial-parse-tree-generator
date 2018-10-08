@@ -26,7 +26,7 @@ class Hypothesis(object):
         self.tokens = tokens
         self.prob = prob
         self.state = state
-        self.score = math.log(prob[-1]) if score is None else score
+        self.score = -math.log(prob[-1]) if score is None else score
 
     def extend_(self, token, prob, new_state):
         """Extend the hypothesis with result from latest step.
@@ -40,7 +40,7 @@ class Hypothesis(object):
         """
         tokens = self.tokens + [token]
         probs = self.prob + [prob]
-        score = self.score + math.log(prob)
+        score = self.score - math.log(prob)
         return Hypothesis(tokens, probs, new_state, score)
 
     @property
