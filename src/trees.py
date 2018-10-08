@@ -201,11 +201,11 @@ class LeafMyParseNode(MyParseNode):
         return self
 
     def deserialize(self, labels):
-        # invalid labels: when using tag as first symbol
-        if len(labels) == 1:
-            return None
-        else:
-            labels = labels[1:]
+        # # invalid labels: when using tag as first symbol
+        # if len(labels) == 1:
+        #     return None
+        # else:
+        #     labels = labels[1:]
         # invalid labels: labels should start with token not missing
         if (labels[0].startswith(R) or labels[0].startswith(L)):
             return None

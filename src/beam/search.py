@@ -94,10 +94,10 @@ class BeamSearch(object):
             complete_hyps = []
             hyps = [Hypothesis([self._start_token], [1.0], dec_in_state)]
             _, _, new_state = decode_topk(
-                                [[self._start_token, tag]],
-                                dec_in_state,
-                                [enc_state],
-                                1)
+                                latest_tokens = [[self._start_token]],
+                                init_states = dec_in_state,
+                                enc_state = [enc_state])
+            hyps = [hyps[0].extend_(tag, 1.0, new_state)]
             for steps in xrange(self._max_steps):
                 if hyps != []:
                     # Extend each hypothesis.
@@ -140,7 +140,7 @@ class BeamSearch(object):
                             # Otherwise continue to the extend the hypothesis.
                             hyps.append(h)
             hyps_per_word = self.best_hyps(complete_hyps)
-            hyps_per_sentence.append([(h.tokens[1:-1], h.score) for h in hyps_per_word])
+            hyps_per_sentence.append([(h.tokens[2:-1], h.score) for h in hyps_per_word])
 
         return hyps_per_sentence
 
