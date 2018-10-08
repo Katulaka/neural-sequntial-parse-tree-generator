@@ -86,6 +86,26 @@ class Parser(object):
 
         return (tags, words, chars)
 
+    def convert_batch_test(self, sentence):
+
+        import pdb; pdb.set_trace()
+        enc_sentence = self.convert_one_sentence(sentence, None, is_train=False)
+        tags, words, chars = zip(*enc_sentence)
+        words_len = [len(words)]
+        tags_len = [len(tags)]
+        chars_len = [len(char) for char in chars]
+        max_chars_len = max(chars_len)
+        CHAR_PAD = self.char_vocab.index(PAD)
+        chars = [char + (CHAR_PAD,)*(max_len-len(char)) for char in chars]
+
+        BatchVector = collections.namedtuple('BatchVector', 'input length')
+        bv_tags = BatchVector(input=np.vstack(tags), length=np.array(tags_len))
+        bv_words = BatchVector(input=np.vstack(words), length=np.array(words_len))
+        bv_chars = BatchVector(input=np.vstack(chars), length=np.array(chars_len))
+
+        Batch = collections.namedtuple('Batch', 'tags words chars')
+        return Batch(tags=bv_tags, words=bv_words, chars=bv_chars)
+
 
     def convert_batch(self, sentences, gold, is_train):
 
@@ -95,7 +115,7 @@ class Parser(object):
         def pad(sequence, pad, max_len):
             return sequence + (pad,)*(max_len-len(sequence))
 
-        batch = [self.convert_one_sentence(sentence, g, is_train)
+        batch = [self.convert_one_sentence(sentence, g, is_train=is_train)
                         for sentence, g in zip(sentences, gold)]
         batch_len = [(len(t), len(w), seq_len(c), seq_len(l)) for t,w,c,l,_ in batch]
         tags_len, words_len, chars_len, labels_len = zip(*batch_len)
@@ -157,13 +177,7 @@ class Parser(object):
             start = self.label_vocab.index(START)
             stop = self.label_vocab.index(STOP)
             astar_parms = predict_parms['astar_parms']
-            # enc_bv = self.convert_batch(sentences, gold, is_train=False)
-            batch = self.convert_one_sentence(sentences, None, is_train=False)
-            import pdb; pdb.set_trace()
-            batch_len = [(len(t), len(w), seq_len(c)) for t,w,c,in batch]
-            tags_len, words_len, chars_len = zip(*batch_len)
-            tags, words, chars = zip(*batch)
-
+            enc_bv = self.convert_batch_test(sentence)
 
             enc_state = self.model.encode_top_state(enc_bv)[1:enc_bv.words.length - 1]
             for beam_size in predict_parms['beam_parms']:
