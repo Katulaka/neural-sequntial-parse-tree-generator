@@ -177,7 +177,7 @@ class Parser(object):
             start = self.label_vocab.index(START)
             stop = self.label_vocab.index(STOP)
             astar_parms = predict_parms['astar_parms']
-            enc_bv = self.convert_batch_test(sentence)
+            enc_bv = self.convert_batch_test(sentences)
 
             enc_state = self.model.encode_top_state(enc_bv)[1:enc_bv.words.length - 1]
             for beam_size in predict_parms['beam_parms']:
