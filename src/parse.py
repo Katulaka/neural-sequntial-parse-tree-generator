@@ -185,7 +185,6 @@ class Parser(object):
             tags = [self.label_vocab.index(tag) for tag, _ in sentence]
             bs = BeamSearch(start, stop, beam_size)
             hyps = bs.beam_search(enc_state, self.model.decode_topk, tags)
-            import pdb; pdb.set_trace()
 
             grid = []
             for i, (leaf_hyps, leaf) in enumerate(zip(hyps, sentence)):
@@ -197,6 +196,7 @@ class Parser(object):
                         row.append((partial_tree, hyp[1]))
                 grid.append(row)
 
+            import pdb; pdb.set_trace()
 
             nodes = astar_search(grid, self.keep_valence_value, astar_parms)
             if nodes is not None:
