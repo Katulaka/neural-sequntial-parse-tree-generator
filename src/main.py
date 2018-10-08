@@ -152,9 +152,8 @@ def run_train(args):
         with open(parser_path, 'wb') as f:
             pickle.dump(parser, f, pickle.HIGHEST_PROTOCOL)
 
-    parser = parser(args.mode)
-
     import pdb; pdb.set_trace()
+    parser = parser({'mode' : args.mode, 'gpu_id' : args.gpu_id})
 
     total_processed = 0
     current_processed = 0
@@ -356,7 +355,7 @@ def main():
     subparser.add_argument('--n-layers', type=int, default=2, dest="nn_n_layers")
     subparser.add_argument('--layer-norm', action='store_true', dest="nn_layer_norm")
     subparser.add_argument("--model-path-base", required=True)
-    subparser.add_argument("--gpu-id", type=int, default=0, dest="nn_gpu_id")
+    subparser.add_argument("--gpu-id", type=int, default=0)
 
     subparser = subparsers.add_parser("test")
     subparser.set_defaults(callback=run_test, mode='test')

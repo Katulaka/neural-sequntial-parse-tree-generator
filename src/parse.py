@@ -43,8 +43,10 @@ class Parser(object):
         self.char_vocab = char_vocab
         self.label_vocab = label_vocab
 
-    def __call__(self, mode):
-        self.config['mode'] = mode
+    def __call__(self, **kwargs):
+        # self.config['mode'] = mode
+        # self.config['gpu_id'] = gpu_id
+        self.config.update(kwargs)
         self.model = NSPTGModel(self.config)
 
         writer_dir = self.model.model_path_base + '/logs'
