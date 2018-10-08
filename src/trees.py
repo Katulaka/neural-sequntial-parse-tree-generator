@@ -201,12 +201,16 @@ class LeafMyParseNode(MyParseNode):
         return self
 
     def deserialize(self, labels):
+        # invalid labels: when using tag as first symbol
+        if (labels[0] != self.tag) or (len(labels) == 1):
+            return None
+        else:
+            labels = labels[1:]
         # invalid labels: labels should start with token not missing
         if (labels[0].startswith(R) or labels[0].startswith(L)):
             return None
         index = self.left
         children = [self]
-        import pdb; pdb.set_trace()
         while labels:
             p_label = labels[0]
             labels = labels[1:]
