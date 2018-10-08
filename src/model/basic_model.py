@@ -107,9 +107,15 @@ class BasicModel(object):
 
     def save(self, filename):
     # This function is usually common to all your models, Here is an example:
-        if not os.path.exists(self.ckpt_dir):
+        # if not os.path.exists(self.ckpt_dir):
+        #     try:
+        #         os.makedirs(os.path.abspath(self.ckpt_dir))
+        #     except OSError as exc: # Guard against race condition
+        #         if exc.errno != errno.EEXIST:
+        #             raise
+        if not tf.gfile.Exists(self.ckpt_dir):
             try:
-                os.makedirs(os.path.abspath(self.ckpt_dir))
+                tf.gfile.MakeDirs(self.ckpt_dir)
             except OSError as exc: # Guard against race condition
                 if exc.errno != errno.EEXIST:
                     raise
