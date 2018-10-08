@@ -201,8 +201,9 @@ class Parser(object):
             nodes = astar_search(grid, self.keep_valence_value, astar_parms)
             if nodes is not None:
                 return nodes
-        children = [trees.LeafMyParseNode(i, *leaf) for i,leaf in enumerate(sentence)]
-        return trees.InternalMyParseNode('S', children)
+        # children = [trees.LeafMyParseNode(i, *leaf) for i,leaf in enumerate(sentence)]
+        # return trees.InternalMyParseNode('S', children)
+        return None
 
     def log(self, value, is_train):
 

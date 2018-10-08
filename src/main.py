@@ -266,11 +266,16 @@ def run_test(args):
     start_time = time.time()
 
     test_predicted = []
+    missed_indices = []
     predict_parms = {'astar_parms': args.astar_parms, 'beam_parms':args.beam_size}
     for i, tree in  enumerate(test_treebank):
         sentence = [(leaf.tag, leaf.word) for leaf in tree.leaves()]
         prediction_start_time = time.time()
         predicted = parser.parse(sentence, predict_parms=predict_parms)
+        if predicted is None:
+            missed_indices.append(i)
+            children = [trees.LeafMyParseNode(i, *leaf) for i,leaf in enumerate(sentence)]
+            predicted = trees.InternalMyParseNode('S', children)
         print(
             "processed {:,}/{:,} "
             "prediction-elapsed {} "
@@ -292,6 +297,7 @@ def run_test(args):
             format_elapsed(start_time),
         )
     )
+    import pdb; pdb.set_trace()
 
 
 def main():
