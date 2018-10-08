@@ -263,12 +263,15 @@ def run_test(args):
 
     print("Loading model from {}...".format(args.model_path_base))
 
-    config['mode'] = args.mode
-    config['model_path_base'] = args.model_path_base
     config_path = os.path.join(args.model_path_base, 'config.pkl')
-    if os.path.exists(config_path, 'rb'):
+    # if os.path.exists(config_path, 'rb'):
+    try:
         with open(config_path) as f:
-            config.update(pickle.load(f))
+            config = pickle.load(f)
+    except:
+        print("Didn't find {}".format(config_path))
+
+    config['mode'] = args.mode
 
     model = NSPTGModel(config)
 
