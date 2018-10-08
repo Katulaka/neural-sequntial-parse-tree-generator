@@ -26,7 +26,7 @@ class Parser(object):
             tag_vocab,
             word_vocab,
             char_vocab,
-            label_vocab,
+            label_vocab
     ):
 
         self.config = {
@@ -42,6 +42,7 @@ class Parser(object):
         self.word_vocab = word_vocab
         self.char_vocab = char_vocab
         self.label_vocab = label_vocab
+        self.keep_valence_value = args.keep_valence_value
 
     def __call__(self, model_update):
 

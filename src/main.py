@@ -126,7 +126,7 @@ def run_train(args):
                     tag_vocab,
                     word_vocab,
                     char_vocab,
-                    label_vocab,
+                    label_vocab
                 )
         with open(parser_path, 'wb') as f:
             pickle.dump(parser, f, pickle.HIGHEST_PROTOCOL)
