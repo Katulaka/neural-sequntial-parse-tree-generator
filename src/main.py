@@ -270,6 +270,7 @@ def run_test(args):
     else:
         print("Didn't find {}".format(config_path))
 
+    config['model_path_base'] = args.model_path_base
     config['mode'] = args.mode
 
     model = NSPTGModel(config)
