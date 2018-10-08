@@ -54,6 +54,7 @@ class BasicModel(object):
         # but making separate than the __init__ function allows it to be overidden cleanly
         # this is an example of such a function
         checkpoint = tf.train.get_checkpoint_state(self.ckpt_dir)
+        import pdb; pdb.set_trace()
         if checkpoint is None:
             if self.mode == 'train':
                 self.sess.run(self.init_op)
