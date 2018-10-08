@@ -141,7 +141,7 @@ def run_train(args):
          with open(parser_path, 'rb') as f:
              parser = pickle.load(f)
     else:
-        os.makedirs(args.model_path_base)
+        # os.makedirs(args.model_path_base)
         parser = parse.Parser(
                     args,
                     tag_vocab,
