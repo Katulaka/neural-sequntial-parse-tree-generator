@@ -269,7 +269,6 @@ def run_test(args):
     predict_parms = {'astar_parms': args.astar_parms, 'beam_parms':args.beam_size}
     for i, tree in  enumerate(test_treebank):
         sentence = [(leaf.tag, leaf.word) for leaf in tree.leaves()]
-        import pdb; pdb.set_trace()
         prediction_start_time = time.time()
         predicted, _ = parser.parse(sentence, None, mode='test', predict_parms=predict_parms)
         print(
