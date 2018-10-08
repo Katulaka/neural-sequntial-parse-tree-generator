@@ -3,6 +3,7 @@ import tensorflow as tf
 import numpy as np
 
 import trees
+from model.NSPTG_model import NSPTGModel
 from beam.search import BeamSearch
 from astar.search import astar_search
 
@@ -21,23 +22,37 @@ def flatten(list_of_lists):
 class Parser(object):
     def __init__(
             self,
-            model,
+            args,
             tag_vocab,
             word_vocab,
             char_vocab,
             label_vocab,
     ):
 
-        self.model = model
+        self.config = {
+                'ntags' : tag_vocab.size,
+                'nwords' : word_vocab.size,
+                'nchars': char_vocab.size,
+                'nlabels': label_vocab.size,
+                'model_path_base': args.model_path_base,
+                **{k.split("nn_")[-1] : v for k,v in vars(args).items() if k.startswith("nn_")}
+                }
+
         self.tag_vocab = tag_vocab
         self.word_vocab = word_vocab
         self.char_vocab = char_vocab
         self.label_vocab = label_vocab
 
+    def __call__(self, mode):
+        self.config['mode'] = mode
+        self.model = NSPTGModel(self.config)
+
         writer_dir = self.model.model_path_base + '/logs'
         graph = self.model.sess.graph
         self.train_writer = tf.summary.FileWriter(writer_dir + '/train', graph)
         self.dev_writer = tf.summary.FileWriter(writer_dir +  '/dev', graph)
+
+        return self
 
     def convert_one_sentence(self, sentence, gold, is_train):
 

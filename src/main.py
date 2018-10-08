@@ -11,7 +11,6 @@ import parse
 import trees
 import vocabulary
 
-from model.NSPTG_model import NSPTGModel
 
 def format_elapsed(start_time):
     elapsed_time = int(time.time() - start_time)
@@ -118,35 +117,43 @@ def run_train(args):
 
     print("Initializing model...")
 
-    config = {}
-    config['mode'] = args.mode
-    config['model_path_base'] = args.model_path_base
-    config_path = os.path.join(args.model_path_base, 'config.pkl')
-    if os.path.exists(config_path):
-        with open(config_path, 'rb') as f:
-            config.update(pickle.load(f))
+    # config = {}
+    # config['mode'] = args.mode
+    # config['model_path_base'] = args.model_path_base
+    # config_path = os.path.join(args.model_path_base, 'config.pkl')
+    # if os.path.exists(config_path):
+    #     with open(config_path, 'rb') as f:
+    #         config.update(pickle.load(f))
+    # else:
+    #   os.makedirs(args.model_path_base)
+    #    config.update({'ntags' : tag_vocab.size,
+    #                 'nwords' : word_vocab.size,
+    #                 'nchars': char_vocab.size,
+    #                 'nlabels': label_vocab.size})
+    #   config.update({k.split("nn_")[-1] : v
+    #                     for k,v in vars(args).items()
+    #                             if k.startswith("nn_")}
+    #             )
+    #   with open(config_path, 'wb') as f:
+    #       pickle.dump(config, f, pickle.HIGHEST_PROTOCOL)
+    parser_path = os.path.join(args.model_path_base, 'parser.pkl')
+    if os.path.exists(parser_path):
+         with open(parser_path, 'rb') as f:
+             parser = pickle.load(f)
     else:
         os.makedirs(args.model_path_base)
-        config.update({'ntags' : tag_vocab.size,
-                        'nwords' : word_vocab.size,
-                        'nchars': char_vocab.size,
-                        'nlabels': label_vocab.size})
-        config.update({k.split("nn_")[-1] : v
-                            for k,v in vars(args).items()
-                                    if k.startswith("nn_")}
-                    )
-        with open(config_path, 'wb') as f:
-            pickle.dump(config, f, pickle.HIGHEST_PROTOCOL)
+        parser = parse.Parser(
+                    args,
+                    tag_vocab,
+                    word_vocab,
+                    char_vocab,
+                    label_vocab,
+                )
+        with open(parser_path, 'wb') as f:
+            pickle.dump(parser, f, pickle.HIGHEST_PROTOCOL)
 
-    model = NSPTGModel(config)
+    parser = parser(args.mode)
 
-    parser = parse.Parser(
-            model,
-            tag_vocab,
-            word_vocab,
-            char_vocab,
-            label_vocab,
-            )
     import pdb; pdb.set_trace()
 
     total_processed = 0
@@ -264,25 +271,30 @@ def run_test(args):
 
     print("Loading model from {}...".format(args.model_path_base))
 
-    config_path = os.path.join(args.model_path_base, 'config.pkl')
-    if os.path.exists(config_path):
-        with open(config_path, 'rb') as f:
-            config = pickle.load(f)
+    parser_path = os.path.join(args.model_path_base, 'parser.pkl')
+    if os.path.exists(parser_path):
+        with open(parser_path, 'rb') as f:
+            parser = pickle.load(f)
+            parser = parser(args.mode)
     else:
-        print("Didn't find {}".format(config_path))
+        print("Couldn't load {}".format(parser_path))
+    # config_path = os.path.join(args.model_path_base, 'config.pkl')
+    # if os.path.exists(config_path):
+    #     with open(config_path, 'rb') as f:
+    #         config = pickle.load(f)
 
-    config['model_path_base'] = args.model_path_base
-    config['mode'] = args.mode
-
-    model = NSPTGModel(config)
-
-    parser = parse.Parser(
-                model,
-                tag_vocab,
-                word_vocab,
-                char_vocab,
-                label_vocab,
-                )
+    # config['model_path_base'] = args.model_path_base
+    # config['mode'] = args.mode
+    #
+    # model = NSPTGModel(config)
+    #
+    # parser = parse.Parser(
+    #             model,
+    #             tag_vocab,
+    #             word_vocab,
+    #             char_vocab,
+    #             label_vocab,
+    #             )
 
     print("Parsing test sentences...")
 
