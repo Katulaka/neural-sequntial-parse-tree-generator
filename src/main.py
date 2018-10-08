@@ -264,8 +264,8 @@ def run_test(args):
     print("Loading model from {}...".format(args.model_path_base))
 
     config_path = os.path.join(args.model_path_base, 'config.pkl')
-    if os.path.exists(config_path, 'rb'):
-        with open(config_path) as f:
+    if os.path.exists(config_path):
+        with open(config_path, 'rb') as f:
             config = pickle.load(f)
     else:
         print("Didn't find {}".format(config_path))
