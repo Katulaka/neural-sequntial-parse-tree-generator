@@ -182,9 +182,10 @@ class Parser(object):
         enc_state = self.model.encode_top_state(enc_bv)
         enc_state = np.squeeze(enc_state)[1:enc_bv.words.length[0] - 1]
         for beam_size in predict_parms['beam_parms']:
-            tags = [self.label_vocab.index(tag) for tag, _ in sentence]
-            bs = BeamSearch(start, stop, beam_size)
-            hyps = bs.beam_search(enc_state, self.model.decode_topk, tags)
+            hyps = BeamSearch(start, stop, beam_size).beam_search(
+                                                        enc_state,
+                                                        self.model.decode_topk
+                                                        )
 
             grid = []
             for i, (leaf_hyps, leaf) in enumerate(zip(hyps, sentence)):
@@ -199,8 +200,6 @@ class Parser(object):
             nodes = astar_search(grid, self.keep_valence_value, astar_parms)
             if nodes is not None:
                 return nodes
-        # children = [trees.LeafMyParseNode(i, *leaf) for i,leaf in enumerate(sentence)]
-        # return trees.InternalMyParseNode('S', children)
         return None
 
     def log(self, value, is_train):

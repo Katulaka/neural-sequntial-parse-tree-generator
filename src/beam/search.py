@@ -72,7 +72,7 @@ class BeamSearch(object):
         self._end_token = end_token
         self._max_steps = max_steps
 
-    def beam_search(self, enc_state, decode_topk, tags=None):
+    def beam_search(self, enc_state, decode_topk):
         """Performs beam search for decoding.
 
          Args:
@@ -86,8 +86,6 @@ class BeamSearch(object):
             hyps: list of Hypothesis, the best hypotheses found by beam search,
                     ordered by score
          """
-        is_use_tags = tags is not None
-        min_len, s_idx = (3, 2) if is_use_tags else (2, 1)
         hyps_per_sentence = []
         #iterate over words in seq
         for i, dec_in in enumerate(enc_state):
@@ -131,7 +129,7 @@ class BeamSearch(object):
 
                     for h in self.best_hyps(all_hyps):
                         # Filter and collect any hypotheses that have the end token.
-                        if h.latest_token == self._end_token and len(h.tokens)>min_len:
+                        if h.latest_token == self._end_token and len(h.tokens)>2:
                             # Pull the hypothesis off the beam
                             #if the end token is reached.
                             complete_hyps.append(h)
@@ -144,7 +142,7 @@ class BeamSearch(object):
                             # Otherwise continue to the extend the hypothesis.
                             hyps.append(h)
             hyps_per_word = self.best_hyps(complete_hyps)
-            hyps_per_sentence.append([(h.tokens[s_idx:-1], h.score) for h in hyps_per_word])
+            hyps_per_sentence.append([(h.tokens[1:-1], h.score) for h in hyps_per_word])
 
         return hyps_per_sentence
 
