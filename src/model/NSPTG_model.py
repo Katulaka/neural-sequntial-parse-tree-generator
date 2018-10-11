@@ -99,9 +99,9 @@ class NSPTGModel(BasicModel):
                                 dtype=self.dtype)
             w_bidi_out_c = tf.concat(w_bidi_out , -1, name='word-bidi-out')
 
-            self.encode_state = tf.concat([w_bidi_in, w_bidi_out_c], -1)
+            encode_state = tf.concat([w_bidi_in, w_bidi_out_c], -1)
 
-            # self.encode_state = tf.layers.dense(encode_state, self.h_label)
+            self.encode_state = tf.layers.dense(encode_state, self.h_label)
 
     def _add_label_lstm_layer(self):
         """Generate sequences of tags"""
@@ -167,10 +167,7 @@ class NSPTGModel(BasicModel):
             mask_t = tf.sequence_mask(self.labels_len, dtype=tf.int32)
             logits_filtered = tf.dynamic_partition(logits, mask_t, 2)[1]
 
-            self.logits = tf.layers.dense(
-                                logits_filtered,
-                                self.nlabels
-                            )
+            self.logits = tf.layers.dense(logits_filtered, self.nlabels)
             # compute softmax
             self.probs = tf.nn.softmax(self.logits, name='probs')
 
