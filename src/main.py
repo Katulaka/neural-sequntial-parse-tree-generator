@@ -120,7 +120,7 @@ def run_train(args):
         char_vocab.freeze()
         label_vocab.freeze()
 
-        # os.makedirs(args.model_path_base)
+        os.makedirs(args.model_path_base)
         parser = parse.Parser(
                     args,
                     tag_vocab,
