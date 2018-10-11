@@ -9,10 +9,9 @@ dropouts = [0.1, 0.2, 0.3, 0.4]
 iter = itertools.product([0.2], dropouts)
 for i, drops in enumerate(iter):
     path = ("models/tf-with-new-dims-n-tags-dropouts[{},{}]").format(*drops)
-    device = 'GPU:{}'.format(i % n_gpus + s_gpu)
     command = ("python src/main.py train --layer-norm "
                 "--model-path-base {} "
                 "--dropouts {} {} "
                 "--gpu-id {} "
-                 ).format(path, *drops, device)
+                 ).format(path, *drops, (i % n_gpus + s_gpu))
     proc.append(Popen(command.split()))
