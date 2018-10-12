@@ -315,7 +315,7 @@ def main():
     subparser.add_argument("--tag-dim", type=int, default=64, dest="nn_tag_dim")
     subparser.add_argument("--char-dim", type=int, default=32, dest="nn_char_dim")
     subparser.add_argument("--word-dim", type=int, default=32, dest="nn_word_dim")
-    subparser.add_argument("--label-dim", type=int, default=64, dest="nn_label_dim")
+    subparser.add_argument("--label-dim", type=int, default=128, dest="nn_label_dim")
     subparser.add_argument("--h-char", type=int, default=64, dest="nn_h_char")
     subparser.add_argument("--h-word", type=int, default=128, dest="nn_h_word")
     subparser.add_argument("--h-label", type=int, default=512, dest="nn_h_label")
