@@ -31,7 +31,6 @@ class Parser(object):
 
         nn_vars = {k.split("nn_")[-1] : v for k,v in vars(args).items() if k.startswith("nn_")}
         if args.model_path_base.split('/')[-1] == 'grid_search':
-            import pdb; pdb.set_trace()
             args.model_path_base = 'models_grid/'
             for k,v in nn_vars.items():
                 args.model_path_base += '{}({})-'.format(k,v)
@@ -41,8 +40,7 @@ class Parser(object):
                 'nwords' : word_vocab.size,
                 'nchars': char_vocab.size,
                 'nlabels': label_vocab.size,
-                # 'model_path_base': args.model_path_base,
-                'model_path_base': model_path_base,
+                'model_path_base': args.model_path_base,
                 **nn_vars
                 }
 

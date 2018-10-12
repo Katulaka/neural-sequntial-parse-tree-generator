@@ -73,8 +73,7 @@ def run_train(args):
 
     print("Initializing model...")
 
-    parser_path = os.path.join(args.model_path_base, 'parser.pkl')
-    if not os.path.exists(parser_path):
+    if not os.path.exists(os.path.join(args.model_path_base, 'parser.pkl')):
 
         print("Constructing vocabularies...")
 
@@ -128,11 +127,11 @@ def run_train(args):
                     label_vocab
                 )
         os.makedirs(args.model_path_base)
+        parser_path = os.path.join(args.model_path_base, 'parser.pkl')
         with open(parser_path, 'wb') as f:
             pickle.dump(parser, f, pickle.HIGHEST_PROTOCOL)
 
     else:
-
         with open(parser_path, 'rb') as f:
             parser = pickle.load(f)
 
