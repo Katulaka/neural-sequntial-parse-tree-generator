@@ -31,6 +31,7 @@ class Parser(object):
 
         nn_vars = {k.split("nn_")[-1] : v for k,v in vars(args).items() if k.startswith("nn_")}
         if args.model_path_base.split('/')[-1] == 'grid_search':
+            import pdb; pdb.set_trace()
             model_path_base = 'models_grid/'
             for k,v in nn_vars.items():
                 model_path_base += '{}({})-'.format(k,v)
