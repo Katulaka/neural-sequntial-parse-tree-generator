@@ -29,13 +29,22 @@ class Parser(object):
             label_vocab
     ):
 
+        nn_vars = {k.split("nn_")[-1] : v for k,v in vars(args).items() if k.startswith("nn_")}
+        if args.model_path_base.split('/')[-1] == 'grid_search':
+            model_path_base = 'models_grid/'
+            for k,v in nn_vars.items():
+                model_path_base += '{}({})-'.format(k,v)
+        else:
+            model_path_base = args.model_path_base
+
         self.config = {
                 'ntags' : tag_vocab.size,
                 'nwords' : word_vocab.size,
                 'nchars': char_vocab.size,
                 'nlabels': label_vocab.size,
-                'model_path_base': args.model_path_base,
-                **{k.split("nn_")[-1] : v for k,v in vars(args).items() if k.startswith("nn_")}
+                # 'model_path_base': args.model_path_base,
+                'model_path_base': model_path_base,
+                **nn_vars
                 }
 
         self.tag_vocab = tag_vocab

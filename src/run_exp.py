@@ -4,14 +4,22 @@ import itertools
 
 proc = []
 n_gpus = 8
-s_gpu = 1
-dropouts = [0.1, 0.2, 0.3, 0.4, 0.5]
-iter = itertools.product([0.4], dropouts)
-for i, drops in enumerate(iter):
-    path = ("models/tf-with-new-dims-n-tags-dropouts[{},{}]").format(*drops)
-    command = ("python src/main.py train --layer-norm "
-                "--model-path-base {} "
-                "--dropouts {} {} "
+dropout = [0.1, 0.2, 0.3, 0.4, 0.5]
+dropouts = itertools.product(dropout, dropout)
+dims = [2**i for i in range(5, 11)]
+
+for i, dims in enumerate(itertools.product(dims[:2], dims[:2], dims[:2])):
+    command = ("python src/main.py train --layer-norm --model-path-base grid_search "
+                # "--dropouts {} {} "
+                "--tag-dim {} "
+                "--char-dim {} "
+                "--word-dim {} "
+                # "--label-dim {} "
+                # "--h-char {} "
+                # "--h-word {} "
+                # "--h-label {} "
+                # "--attention-dim {} "
+                # "--projection-dim {} "
                 "--gpu-id {} "
-                 ).format(path, *drops, (i % n_gpus + s_gpu))
+                 ).format(*dims, (i % n_gpus))
     proc.append(Popen(command.split()))
