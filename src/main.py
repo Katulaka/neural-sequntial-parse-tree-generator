@@ -120,7 +120,6 @@ def run_train(args):
         char_vocab.freeze()
         label_vocab.freeze()
 
-        os.makedirs(args.model_path_base)
         parser = parse.Parser(
                     args,
                     tag_vocab,
@@ -128,6 +127,7 @@ def run_train(args):
                     char_vocab,
                     label_vocab
                 )
+        os.makedirs(args.model_path_base)
         with open(parser_path, 'wb') as f:
             pickle.dump(parser, f, pickle.HIGHEST_PROTOCOL)
 
