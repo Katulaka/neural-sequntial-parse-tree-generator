@@ -179,34 +179,36 @@ class Parser(object):
                         is_train=False)
         return loss
 
-    def parse(self, sentence, predict_parms=None):
+    def parse(self, sentence, predict_parms):
+        Cell = collections.namedtuple('Cell', 'tree score')
 
-        start = self.label_vocab.index(START)
-        stop = self.label_vocab.index(STOP)
-        astar_parms = predict_parms['astar_parms']
+
+        bs = BeamSearch(self.label_vocab.index(START),
+                        self.label_vocab.index(STOP),
+                        *predict_parms['beam_parms'])
+
         enc_bv = self.convert_batch_test(sentence)
         enc_state = self.model.encode_top_state(enc_bv)
         enc_state = np.squeeze(enc_state)[1:enc_bv.words.length[0] - 1]
-        for beam_size in predict_parms['beam_parms']:
-            hyps = BeamSearch(start, stop, beam_size).beam_search(
-                                                        enc_state,
-                                                        self.model.decode_topk
-                                                        )
+        hyps = bs.beam_search(enc_state,
+                            self.model.decode_topk)
 
-            grid = []
-            for i, (leaf_hyps, leaf) in enumerate(zip(hyps, sentence)):
-                row = []
-                for hyp in leaf_hyps:
-                    labels = np.array(self.label_vocab.values)[hyp[0]].tolist()
-                    partial_tree = trees.LeafMyParseNode(i, *leaf).deserialize(labels)
-                    if partial_tree is not None:
-                        row.append((partial_tree, hyp[1]))
-                grid.append(row)
+        grid = {}
+        for left, (leaf_hyps, leaf) in enumerate(zip(hyps, sentence)):
+            rank = 0
+            for hyp in leaf_hyps:
+                labels = [self.label_vocab.value(h) for h in hyp[0]]
+                partial_tree = trees.LeafPathParseNode(left, *leaf).deserialize(labels)
+                if partial_tree is not None:
+                    grid[left, rank] = Cell(tree = partial_tree, score = hyp[1])
+                    rank += 1
 
-            nodes = astar_search(grid, self.keep_valence_value, astar_parms)
-            if nodes is not None:
-                return nodes
-        return None
+
+        nodes = astar_search(grid, sentence, predict_parms['astar_parms'])
+        if astar_parms[0] == 1:
+                return nodes[0].tree
+            else:
+                return [node.tree for node in nodes]
 
     def log(self, value, is_train):
 

@@ -264,17 +264,14 @@ def run_test(args):
 
     start_time = time.time()
 
-    test_predicted = []
-    missed_indices = []
-    predict_parms = {'astar_parms': args.astar_parms, 'beam_parms':args.beam_size}
+    astar_parms = [args.n_trees, args.time_out, args.n_discounts, args.discount_factor]
+    beam_parms = [args.beam_size, args.max_steps, args.alpha, args.delta]
+    predict_parms = {'astar_parms' : astar_parms, 'beam_parms' : beam_parms}
+
     for i, tree in  enumerate(test_treebank):
         sentence = [(leaf.tag, leaf.word) for leaf in tree.leaves()]
         prediction_start_time = time.time()
         predicted = parser.parse(sentence, predict_parms=predict_parms)
-        if predicted is None:
-            missed_indices.append(i)
-            children = [trees.LeafMyParseNode(i, *leaf) for i,leaf in enumerate(sentence)]
-            predicted = trees.InternalMyParseNode('S', children)
         print(
             "processed {:,}/{:,} "
             "prediction-elapsed {} "
@@ -286,16 +283,20 @@ def run_test(args):
             )
         )
         test_predicted.append(predicted.convert())
-    test_fscore = evaluate.evalb(args.evalb_dir, test_treebank, test_predicted)
 
-    print(
-        "test-fscore {} "
-        "test-elapsed {}".format(
-            test_fscore,
-            format_elapsed(start_time),
+    if args.n_trees == 1:
+        test_fscore = evaluate.evalb(args.evalb_dir, test_treebank, test_predicted)
+
+        print(
+            "test-fscore {} "
+            "test-elapsed {}".format(
+                test_fscore,
+                format_elapsed(start_time),
+            )
         )
-    )
-    import pdb; pdb.set_trace()
+
+    else:
+        import pdb; pdb.set_trace()
 
 
 def main():
@@ -333,8 +334,15 @@ def main():
     subparser.add_argument("--model-path-base", required=True)
     subparser.add_argument("--gpu-id", type=int, default=0)
     subparser.add_argument("--evalb-dir", default="EVALB/")
-    subparser.add_argument("--astar-parms", type=float, nargs=4, default=[1, 60., 1, 2])
-    subparser.add_argument("--beam-size", type=int, nargs='+', default=[5])
+    subparser.add_argument("--n-trees", default=1, type=int)
+    subparser.add_argument("--time-out", default=np.inf, type=float)
+    subparser.add_argument("--n-discounts", default=1, type=int)
+    subparser.add_argument("--discount-factor", default=0.2, type=float)
+    subparser.add_argument("--beam-size", default=5, type=int)
+    subparser.add_argument("--alpha", default=0.6, type=float)
+    subparser.add_argument("--delta", default=5, type=int)
+    subparser.add_argument("--max_steps", default=28, type=int)
+
 
     args = parser.parse_args()
     args.callback(args)

@@ -26,8 +26,7 @@ class Hypothesis(object):
         self.tokens = tokens
         self.prob = prob
         self.state = state
-        # self.score = math.log(prob[-1]) if score is None else score
-        self.score = - math.log(prob[-1]) if score is None else score
+        self.score =  math.log(prob[-1]) if score is None else score
 
     def extend_(self, token, prob, new_state):
         """Extend the hypothesis with result from latest step.
@@ -41,8 +40,7 @@ class Hypothesis(object):
         """
         tokens = self.tokens + [token]
         probs = self.prob + [prob]
-        # score = self.score + math.log(prob)
-        score = self.score - math.log(prob)
+        score = self.score + math.log(prob)
         return Hypothesis(tokens, probs, new_state, score)
 
     @property
@@ -58,7 +56,7 @@ class Hypothesis(object):
 class BeamSearch(object):
     """Beam search."""
 
-    def __init__(self, start_token, end_token, beam_size, max_steps=28):
+    def __init__(self, start_token, end_token, beam_size, max_steps=28, alpha=0.6, delta=5):
         """Creates BeamSearch object.
 
         Args:
@@ -71,6 +69,8 @@ class BeamSearch(object):
         self._start_token = start_token
         self._end_token = end_token
         self._max_steps = max_steps
+        self._alpha = alpha
+        self._delta = delta
 
     def beam_search(self, enc_state, decode_topk):
         """Performs beam search for decoding.
@@ -94,12 +94,12 @@ class BeamSearch(object):
             dec_in_state = tf.contrib.rnn.LSTMStateTuple(c_cell, h_cell)
             complete_hyps = []
             hyps = [Hypothesis([self._start_token], [1.0], dec_in_state)]
-            if is_use_tags:
-                _, _, new_state = decode_topk(
-                                    latest_tokens = [[self._start_token]],
-                                    init_states = dec_in_state,
-                                    enc_state = [enc_state])
-                hyps = [hyps[0].extend_(tags[i], 1.0, new_state)]
+            # if is_use_tags:
+            #     _, _, new_state = decode_topk(
+            #                         latest_tokens = [[self._start_token]],
+            #                         init_states = dec_in_state,
+            #                         enc_state = [enc_state])
+            #     hyps = [hyps[0].extend_(tags[i], 1.0, new_state)]
             for steps in xrange(self._max_steps):
                 if hyps != []:
                     # Extend each hypothesis.
@@ -154,5 +154,4 @@ class BeamSearch(object):
         Returns:
           hyps: A sub list of top <beam_size> hyps.
         """
-        # return sorted(hyps, key=lambda h: h.score, reverse=True)[:self._beam_size]
-        return sorted(hyps, key=lambda h: h.score)[:self._beam_size]
+        return sorted(hyps, key=lambda h: h.score, reverse=True)[:self._beam_size]
